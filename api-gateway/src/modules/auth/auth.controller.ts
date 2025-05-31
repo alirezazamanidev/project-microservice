@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -21,7 +21,12 @@ export class AuthController {
   @ApiOperation({summary:'google redirect route'})
   @UseGuards(AuthGuard('google'))
   @Get('google/callback')
-  async googleAuthRedirect(@Req() req:Request){
-    return req.user;
+   googleAuthRedirect(@Req() req:Request){
+    if(!req?.user) throw new UnauthorizedException('login failed!');
+    
+    req.logIn(req.user!,(err)=>{
+      if(err) throw new UnauthorizedException('login failed');
+    });
+     return {message:'logged In successFully'}
   }
 }
