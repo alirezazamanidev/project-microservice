@@ -1,8 +1,6 @@
-import { ConfigModule } from "@nestjs/config";
+
+import { AuthModule } from "src/modules/auth/auth.module";
 
 export const appIntervalImports=[
-    ConfigModule.forRoot({
-        isGlobal:true,
-        envFilePath:'.env'
-    })
+   AuthModule
 ]

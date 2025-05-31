@@ -5,7 +5,7 @@ import { appIntervalImports } from './app/imports/interval.imports';
 @Module({
   imports: [
     ...appExternalImports,
-    ...appIntervalImports
+    ...appIntervalImports,
   ],
 })
 export class AppModule {}
