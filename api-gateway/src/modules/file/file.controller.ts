@@ -19,8 +19,10 @@ import { memoryStorage } from 'multer';
 import { Request } from 'express';
 import { UploadFileDto } from './dtos/upload-file.dto';
 import { PatternNameEnum } from 'src/common/enums/pattern.enum';
+import { CorrelationIdInterceptor } from 'src/common/inteceptors/CorrelationId.interceptor';
 @ApiTags('File')
 @IsAuthenticated()
+@UseInterceptors(new CorrelationIdInterceptor())
 @Controller('file')
 export class FileController {
   constructor(
@@ -63,4 +65,5 @@ export class FileController {
     );
     return result;
   }
+  
 }

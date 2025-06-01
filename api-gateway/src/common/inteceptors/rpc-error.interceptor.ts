@@ -18,8 +18,11 @@ import {
 @Injectable()
 export class RpcErrorInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    
+    
+
     return next.handle().pipe(
-      timeout(5000),
+      timeout(60000),
       catchError((error) => {
         if (error instanceof TimeoutError) {
           return throwError(
