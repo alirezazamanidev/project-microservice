@@ -10,7 +10,7 @@ export class SessionSerializer extends PassportSerializer{
         done(null,user)
     }
     deserializeUser(payload: any, done: Function) {
-
+    
         // find use with user service
         done(null,payload)
     }
