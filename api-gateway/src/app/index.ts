@@ -10,6 +10,8 @@ import { ValidationPipe } from '@nestjs/common';
 import SwaggerConfig from 'src/configs/swagger.config';
 import Redis from 'ioredis';
 import { RedisStore } from 'connect-redis';
+import { AllExceptionsFilter } from 'src/common/filters/all-exception.filter';
+import { RpcErrorInterceptor } from 'src/common/inteceptors/rpc-error.interceptor';
 
 export const appInitialization = (app: NestExpressApplication) => {
   app.enableCors({
@@ -20,11 +22,9 @@ export const appInitialization = (app: NestExpressApplication) => {
   });
   // filters config
   const httpAdapterHost = app.get(HttpAdapterHost);
-  //   app.useGlobalFilters(
-  //     new AllExceptionsFilter(httpAdapterHost),
-  //   );
+  app.useGlobalInterceptors(new RpcErrorInterceptor());
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-
   const redisClient = new Redis({
     host: 'localhost',
     port: 6379,
