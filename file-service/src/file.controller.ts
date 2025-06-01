@@ -12,6 +12,13 @@ export class FileController {
   async uploadFile(@Payload() data:{file:BufferedFile,user:{email:string}}){
     return this.fileService.uploadFile(data.file,data.user);
   }
+  
+
+  
+    @MessagePattern(PatternNameEnum.LIST_FILES)
+    async getUserFiles(data: {user:{email:string}}) {
+        return this.fileService.getUserFiles(data.user);
+    }
 
 
 

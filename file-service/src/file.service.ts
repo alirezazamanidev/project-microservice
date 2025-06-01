@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { Client } from 'minio';
+import { BucketItem, Client } from 'minio';
 import { BufferedFile } from './common/interfaces/file.interface';
 
 @Injectable()
@@ -45,5 +45,40 @@ export class FileService implements OnModuleInit {
       mimetype: file.mimetype,
       originalname: file.originalname,
     };
+  }
+    async getUserFiles(user: { email: string }) {
+    const safeEmail = user.email.replace(/@/g, '_at_').replace(/\./g, '_dot_');
+    const files: any[] = [];
+    const prifix = `${safeEmail}/`;
+    const stream = await this.minioClient.listObjectsV2(
+      process.env.MINIO_BUCKET_NAME,
+      prifix,
+      true,
+    );
+    for await (const obj of stream as AsyncIterable<BucketItem>) {
+      if (obj.name && !obj.name?.endsWith('/')) {
+        try {
+          const expiry = parseInt(process.env.MINIO_FILE_EXPIRES, 10);
+
+          const presignedUrl = await this.minioClient.presignedGetObject(
+            process.env.MINIO_BUCKET_NAME,
+            obj.name,
+            expiry,
+          );
+
+      
+
+          files.push({
+            filename: obj.name.substring(prifix.length),
+            expiresAt: new Date(Date.now() + expiry * 1000).toISOString(),
+            expires_in_seconds: expiry,
+            url: presignedUrl,
+            size: obj.size,
+            lastModified: obj.lastModified,
+          });
+        } catch (error) {}
+      }
+    }
+    return files;
   }
 }

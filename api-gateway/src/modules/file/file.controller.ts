@@ -51,6 +51,16 @@ export class FileController {
         user: req.user,
       }),
     );
-    return result
+    return result;
+  }
+  @ApiOperation({ summary: 'list of files user' })
+  @Get('list')
+  async listUserFiles(@Req() req: Request) {
+    const result = await lastValueFrom(
+      this.fileClientService.send(PatternNameEnum.LIST_FILES, {
+        user: req.user,
+      }),
+    );
+    return result;
   }
 }
