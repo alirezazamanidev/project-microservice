@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Controller,
   Get,
+  HttpStatus,
   Inject,
   Post,
   Req,
@@ -10,7 +11,15 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileService } from './file.service';
-import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiConsumes,
+  ApiGatewayTimeoutResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { ClientProxy } from '@nestjs/microservices';
 import { catchError, lastValueFrom } from 'rxjs';
 import { IsAuthenticated } from '../auth/decorators/auth.decorator';
@@ -20,6 +29,9 @@ import { Request } from 'express';
 import { UploadFileDto } from './dtos/upload-file.dto';
 import { PatternNameEnum } from 'src/common/enums/pattern.enum';
 import { CorrelationIdInterceptor } from 'src/common/inteceptors/CorrelationId.interceptor';
+import { ApiCustomResponse } from 'src/common/decorators/swagger-response';
+import { FileDto, PresignedFileDto } from './dtos/file.dto';
+import { ErrorResponseDto } from 'src/common/dtos/base-error-response.dto';
 @ApiTags('File')
 @IsAuthenticated()
 @UseInterceptors(new CorrelationIdInterceptor())
@@ -29,6 +41,18 @@ export class FileController {
     @Inject('FILE_SERVICE') private readonly fileClientService: ClientProxy,
   ) {}
 
+  @ApiCustomResponse({
+    model: FileDto,
+    status: HttpStatus.OK,
+    description: 'upload file successfullty',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'unauthorized user',
+    type: ErrorResponseDto,
+  })
+  @ApiGatewayTimeoutResponse({description:'timeOut file service',type:ErrorResponseDto})
+
+  @ApiBadRequestResponse({ description: 'bad request', type: ErrorResponseDto })
   @ApiOperation({ summary: 'uploaded file' })
   @ApiBody({ type: UploadFileDto })
   @ApiConsumes('multipart/form-data')
@@ -53,8 +77,24 @@ export class FileController {
         user: req.user,
       }),
     );
-    return result;
+    return {
+      message: 'uploaded file successFully',
+      data: result,
+    };
   }
+  @ApiCustomResponse({
+    model: PresignedFileDto,
+    isArray: true,
+    status: HttpStatus.OK,
+    description: 'get list files user',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'unauthorized user',
+    type: ErrorResponseDto,
+  })
+
+  @ApiGatewayTimeoutResponse({description:'timeOut file service',type:ErrorResponseDto})
+  @ApiBadRequestResponse({ description: 'bad request', type: ErrorResponseDto })
   @ApiOperation({ summary: 'list of files user' })
   @Get('list')
   async listUserFiles(@Req() req: Request) {
@@ -63,7 +103,9 @@ export class FileController {
         user: req.user,
       }),
     );
-    return result;
+    return {
+      message: 'list files user',
+      data: result,
+    };
   }
-  
 }

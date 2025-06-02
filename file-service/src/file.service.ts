@@ -39,7 +39,6 @@ export class FileService implements OnModuleInit {
       `File ${objectName} uploaded successfully by user ${user.email}.`,
     );
     return {
-      message: 'File uploaded successfully',
       filePath: objectName,
       size: file.size,
       mimetype: file.mimetype,

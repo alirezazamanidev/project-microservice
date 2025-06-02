@@ -6,13 +6,14 @@ import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 export default function SwaggerConfig(app: INestApplication) {
   const config = new DocumentBuilder()
     .setTitle('********* gateway api  **********')
-
+    
     .addSecurity('Authorization', SwaggerAuthConfig())
     .build();
   const theme = new SwaggerTheme();
   const options = {
     explorer: true,
     customCss: theme.getBuffer(SwaggerThemeNameEnum.ONE_DARK),
+    jsonDocumentUrl: 'docs/json',
   };
 
   const document = SwaggerModule.createDocument(app, config, {});
