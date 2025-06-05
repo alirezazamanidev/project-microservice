@@ -10,7 +10,7 @@ export class FileController {
 
   @MessagePattern(PatternNameEnum.UPLOAD_FILE)
   async uploadFile(@Payload() data:{file:BufferedFile,user:{email:string}},@Ctx() ctx:RmqContext){
-    // console.log(ctx.getMessage());
+    
     
     return this.fileService.uploadFile(data.file,data.user);
   }
