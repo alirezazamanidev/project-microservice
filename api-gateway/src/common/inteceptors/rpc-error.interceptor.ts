@@ -6,6 +6,7 @@ import {
   NestInterceptor,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import {
   Observable,
@@ -17,30 +18,56 @@ import {
 
 @Injectable()
 export class RpcErrorInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    
-    
+  private readonly logger = new Logger(RpcErrorInterceptor.name);
+  private readonly DEFAULT_TIMEOUT = 60000; // 60 seconds
 
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
-      timeout(60000),
+      timeout(this.DEFAULT_TIMEOUT),
       catchError((error) => {
-        console.log(error);
-        
+    
         if (error instanceof TimeoutError) {
           return throwError(
-            () =>
-              new HttpException('service timeout', HttpStatus.GATEWAY_TIMEOUT),
+            () => new HttpException(
+              'Service timeout - Request took too long to process',
+              HttpStatus.GATEWAY_TIMEOUT,
+            ),
           );
         }
-        if (error?.statusCode && error?.message) {
+
+        // Handle structured errors from microservices
+        if (this.isStructuredError(error)) {
           return throwError(
             () => new HttpException(error.message, error.statusCode),
           );
         }
+
+        // Handle RPC-specific errors
+        if (error?.code === 'UNAVAILABLE') {
+          return throwError(
+            () => new HttpException(
+              'Service temporarily unavailable',
+              HttpStatus.SERVICE_UNAVAILABLE,
+            ),
+          );
+        }
+
+        // Default error handling
         return throwError(
-          () => new HttpException('Unknown error from microservice', 500),
+          () => new HttpException(
+            'Internal server error occurred while processing request',
+            HttpStatus.INTERNAL_SERVER_ERROR,
+          ),
         );
       }),
     );
+  }
+
+  private isStructuredError(error: any): boolean {
+    return error?.statusCode && 
+           error?.message && 
+           typeof error.statusCode === 'number' &&
+           error.statusCode >= 400 && 
+           error.statusCode < 600;
   }
 }

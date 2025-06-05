@@ -4,6 +4,9 @@ import { Cache } from 'cache-manager';
 import { OtpRecord } from '../common/interfaces/auth.interface';
 import { randomInt } from 'crypto';
 import { RpcException } from '@nestjs/microservices';
+import { AuthErrorCodes } from '../common/enums/error-codes.enum';
+import { createStandardError } from '../common/utils/error.util';
+
 @Injectable()
 export class OtpService {
   private readonly logger = new Logger(OtpService.name);
@@ -39,11 +42,14 @@ export class OtpService {
       this.logger.log(`OTP saved successfully for email: ${email}`);
     } catch (error) {
       this.logger.error(`Error saving OTP for email ${email}:`, error);
-      throw new RpcException({
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Failed to save OTP',
-        code: 'OTP_SAVE_ERROR',
-      });
+      throw new RpcException(
+        createStandardError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          AuthErrorCodes.OTP_SAVE_ERROR,
+          undefined,
+          { email, originalError: error.message },
+        ),
+      );
     }
   }
 
@@ -54,29 +60,39 @@ export class OtpService {
     const key = `otp:${email}`;
     const otpRecord: OtpRecord | null = await this.cacheManager.get(key);
 
-    if (!otpRecord)
-      throw new RpcException({
-        statusCode: HttpStatus.UNAUTHORIZED,
-        message: 'otp code expired',
-        code: 'OTP_EXPIRED',
-      });
+    if (!otpRecord) {
+      throw new RpcException(
+        createStandardError(
+          HttpStatus.UNAUTHORIZED,
+          AuthErrorCodes.OTP_EXPIRED,
+          undefined,
+          { email },
+        ),
+      );
+    }
 
     if (otpRecord.attempts >= this.MAX_ATTEMPTS) {
       await this.cacheManager.del(key);
-      throw new RpcException({
-        statusCode: HttpStatus.UNAUTHORIZED,
-        message: 'Maximum OTP attempts exceeded',
-        code: 'MAX_OTP_ATTEMPTS_EXCEEDED',
-      });
+      throw new RpcException(
+        createStandardError(
+          HttpStatus.UNAUTHORIZED,
+          AuthErrorCodes.MAX_OTP_ATTEMPTS_EXCEEDED,
+          undefined,
+          { email, attempts: otpRecord.attempts },
+        ),
+      );
     }
 
     if (new Date() > otpRecord.expiresAt) {
       await this.cacheManager.del(key);
-      throw new RpcException({
-        statusCode: HttpStatus.UNAUTHORIZED,
-        message: 'otp code expired',
-        code: 'OTP_EXPIRED',
-      });
+      throw new RpcException(
+        createStandardError(
+          HttpStatus.UNAUTHORIZED,
+          AuthErrorCodes.OTP_EXPIRED,
+          undefined,
+          { email },
+        ),
+      );
     }
 
     otpRecord.attempts += 1;
@@ -84,11 +100,14 @@ export class OtpService {
     await this.cacheManager.set(key, otpRecord, ttl);
 
     if (otpRecord.otp !== providedOtp) {
-      throw new RpcException({
-        statusCode: HttpStatus.UNAUTHORIZED,
-        message: 'Invalid OTP code',
-        code: 'INVALID_OTP',
-      });
+      throw new RpcException(
+        createStandardError(
+          HttpStatus.UNAUTHORIZED,
+          AuthErrorCodes.OTP_INVALID,
+          undefined,
+          { email, attempts: otpRecord.attempts },
+        ),
+      );
     }
 
     // OTP is valid, remove it from cache

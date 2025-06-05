@@ -40,18 +40,6 @@ export class RpcExceptionFilter implements ExceptionFilter {
     const httpStatus = this.mapRpcToHttpStatus(error);
     const errorResponse = this.buildErrorResponse(error, request);
 
-    // Log error for monitoring
-    this.logger.error(
-      `RPC Error - ${error.code || 'UNKNOWN'}: ${error.message}`,
-      {
-        statusCode: httpStatus,
-        code: error.code,
-        path: request.url,
-        method: request.method,
-        userAgent: request.get('User-Agent'),
-        ip: request.ip,
-      },
-    );
 
     response.status(httpStatus).json(errorResponse);
   }

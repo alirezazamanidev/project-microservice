@@ -31,10 +31,10 @@ export class OtpService {
       await this.cacheManager.set(key, otpRecord, ttl);
       
       // Verify the data was saved
-      const savedRecord = await this.cacheManager.get(key);
+       await this.cacheManager.get(key);
       this.logger.log(`OTP saved successfully for email: ${email}`);
     } catch (error) {
-      this.logger.error(`Error saving OTP for email ${email}:`, error);
+     
       throw new RpcException({
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: 'Failed to save OTP',

@@ -1,19 +1,21 @@
-import { HttpService } from "@nestjs/axios";
-import { CACHE_MANAGER } from "@nestjs/cache-manager";
-import { HttpStatus, Inject, Injectable, Logger } from "@nestjs/common";
-import { RpcException } from "@nestjs/microservices";
-import { Cache } from "cache-manager";
-import { catchError, lastValueFrom } from "rxjs";
-import { UserService } from "./user.service";
+import { HttpService } from '@nestjs/axios';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import { Cache } from 'cache-manager';
+import { catchError, lastValueFrom } from 'rxjs';
+import { UserService } from './user.service';
+import { AuthErrorCodes } from '../common/enums/error-codes.enum';
+import { createStandardError } from '../common/utils/error.util';
 
 @Injectable()
 export class GoogleService {
   private readonly logger = new Logger(GoogleService.name);
-  constructor(private readonly httpService: HttpService,
-    private readonly userService: UserService
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly userService: UserService,
   ) {}
 
-  
   async googleLogin(code: string) {
     try {
       // Exchange authorization code for access token
@@ -28,12 +30,15 @@ export class GoogleService {
           })
           .pipe(
             catchError((error) => {
-              this.logger.error('Google OAuth token exchange failed:', error);
-              throw new RpcException({
-                statusCode: HttpStatus.UNAUTHORIZED,
-                message: 'Google authentication failed',
-                code: 'GOOGLE_AUTH_ERROR',
-              });
+              
+              throw new RpcException(
+                createStandardError(
+                  HttpStatus.UNAUTHORIZED,
+                  AuthErrorCodes.GOOGLE_AUTH_ERROR,
+                  undefined,
+                  { code, originalError: error.message },
+                ),
+              );
             }),
           ),
       );
@@ -49,12 +54,14 @@ export class GoogleService {
           })
           .pipe(
             catchError((error) => {
-              this.logger.error('Failed to fetch Google user profile:', error);
-              throw new RpcException({
-                statusCode: HttpStatus.UNAUTHORIZED,
-                message: 'Failed to fetch user profile',
-                code: 'PROFILE_FETCH_ERROR',
-              });
+              throw new RpcException(
+                createStandardError(
+                  HttpStatus.UNAUTHORIZED,
+                  AuthErrorCodes.GOOGLE_AUTH_ERROR,
+                  'Failed to fetch user profile from Google',
+                  { originalError: error.message },
+                ),
+              );
             }),
           ),
       );
@@ -67,11 +74,14 @@ export class GoogleService {
         throw error;
       }
       this.logger.error('Unexpected error in Google login:', error);
-      throw new RpcException({
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Internal server error during authentication',
-        code: 'INTERNAL_ERROR',
-      });
+      throw new RpcException(
+        createStandardError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          AuthErrorCodes.INTERNAL_SERVER_ERROR,
+          undefined,
+          { originalError: error.message },
+        ),
+      );
     }
   }
 }

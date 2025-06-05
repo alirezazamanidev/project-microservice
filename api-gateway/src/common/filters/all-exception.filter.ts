@@ -35,7 +35,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
       message = 'An internal server error occurred.';
 
-      this.logger.error('Unhandled Exception:', exception);
+      
     }
 
     const responseBody = {

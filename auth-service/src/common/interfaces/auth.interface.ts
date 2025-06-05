@@ -42,3 +42,22 @@ export interface UserPayload {
   isVerified?: boolean;
   registeredAt?: Date;
 }
+
+// Standardized Error Response Interfaces
+export interface ErrorResponse {
+  statusCode: number;
+  message: string;
+  code: string;
+  timestamp: string;
+  details?: any;
+}
+
+export interface ValidationErrorDetail {
+  field: string;
+  value: any;
+  constraints: string[];
+}
+
+export interface ValidationError extends ErrorResponse {
+  details: ValidationErrorDetail[];
+}

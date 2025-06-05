@@ -13,7 +13,6 @@ export class RpcAllExceptionsFilter implements RpcExceptionFilter<any> {
   private readonly logger = new Logger(RpcAllExceptionsFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost): Observable<any> {
-    this.logger.error('RPC Exception:', exception);
 
     if (exception instanceof RpcException) {
       const error = exception.getError();

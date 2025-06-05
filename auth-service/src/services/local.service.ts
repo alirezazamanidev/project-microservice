@@ -11,6 +11,8 @@ import {
   VerifyOtpDto,
 } from 'src/common/interfaces/auth.interface';
 import { UserService } from './user.service';
+import { AuthErrorCodes } from 'src/common/enums/error-codes.enum';
+import { createStandardError } from 'src/common/utils/error.util';
 
 @Injectable()
 export class LocalService {
@@ -25,31 +27,41 @@ export class LocalService {
   async localLogin({ email }: LocalLoginDto) {
     try {
       const userPayload = await this.userService.getUserPayload(email);
-      if (!userPayload)
-        throw new RpcException({
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'Account not found',
-          code: 'ACCOUNT_NOT_FOUND',
-        });
+      if (!userPayload) {
+        throw new RpcException(
+          createStandardError(
+            HttpStatus.NOT_FOUND,
+            AuthErrorCodes.ACCOUNT_NOT_FOUND,
+            undefined,
+            { email },
+          ),
+        );
+      }
 
       // Check if user is verified
       if (!userPayload.isVerified) {
-        throw new RpcException({
-          statusCode: HttpStatus.FORBIDDEN,
-          message: 'Account not verified. Please complete registration first.',
-          code: 'ACCOUNT_NOT_VERIFIED',
-        });
+        throw new RpcException(
+          createStandardError(
+            HttpStatus.FORBIDDEN,
+            AuthErrorCodes.ACCOUNT_NOT_VERIFIED,
+            undefined,
+            { email },
+          ),
+        );
       }
 
       // Check if there's already a valid OTP for this email
       const hasValidOtp = await this.otpService.hasValidOtp(email);
 
       if (hasValidOtp) {
-        throw new RpcException({
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          message: 'OTP already sent, please wait before requesting a new one',
-          code: 'OTP_ALREADY_SENT',
-        });
+        throw new RpcException(
+          createStandardError(
+            HttpStatus.TOO_MANY_REQUESTS,
+            AuthErrorCodes.OTP_ALREADY_SENT,
+            undefined,
+            { email },
+          ),
+        );
       }
 
       // Generate new OTP
@@ -62,11 +74,14 @@ export class LocalService {
 
       if (!emailSent) {
         await this.otpService.deleteOtp(email);
-        throw new RpcException({
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Failed to send email',
-          code: 'EMAIL_SEND_ERROR',
-        });
+        throw new RpcException(
+          createStandardError(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            AuthErrorCodes.EMAIL_SEND_ERROR,
+            undefined,
+            { email },
+          ),
+        );
       }
 
       this.logger.log(`Login OTP sent successfully to email: ${email}`);
@@ -79,33 +94,43 @@ export class LocalService {
         throw error;
       }
       this.logger.error(`Error sending OTP to ${email}:`, error);
-      throw new RpcException({
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Failed to send OTP',
-        code: 'OTP_SEND_ERROR',
-      });
+      throw new RpcException(
+        createStandardError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          AuthErrorCodes.OTP_SEND_ERROR,
+          undefined,
+          { email, originalError: error.message },
+        ),
+      );
     }
   }
+
   async localRegister({ email, fullname }: LocalRegisterDto) {
     try {
       const userPayload = await this.userService.getUserPayload(email);
       if (userPayload) {
-        throw new RpcException({
-          statusCode: HttpStatus.CONFLICT,
-          message: 'User already exists',
-          code: 'USER_ALREADY_EXISTS',
-        });
+        throw new RpcException(
+          createStandardError(
+            HttpStatus.CONFLICT,
+            AuthErrorCodes.USER_ALREADY_EXISTS,
+            undefined,
+            { email },
+          ),
+        );
       }
 
       // Check if there's already a valid OTP for this email
       const hasValidOtp = await this.otpService.hasValidOtp(email);
 
       if (hasValidOtp) {
-        throw new RpcException({
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          message: 'OTP already sent, please wait before requesting a new one',
-          code: 'OTP_ALREADY_SENT',
-        });
+        throw new RpcException(
+          createStandardError(
+            HttpStatus.TOO_MANY_REQUESTS,
+            AuthErrorCodes.OTP_ALREADY_SENT,
+            undefined,
+            { email },
+          ),
+        );
       }
 
       // Store user data temporarily in Redis (will be moved to permanent storage after OTP verification)
@@ -125,11 +150,14 @@ export class LocalService {
       if (!emailSent) {
         // Clean up temp data if email fails
         await this.cacheManager.del(tempUserKey);
-        throw new RpcException({
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Failed to send email',
-          code: 'EMAIL_SEND_ERROR',
-        });
+        throw new RpcException(
+          createStandardError(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            AuthErrorCodes.EMAIL_SEND_ERROR,
+            undefined,
+            { email },
+          ),
+        );
       }
 
       this.logger.log(`Registration OTP sent successfully to email: ${email}`);
@@ -143,31 +171,37 @@ export class LocalService {
         throw error;
       }
       this.logger.error(`Error in registration for ${email}:`, error);
-      throw new RpcException({
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Failed to process registration',
-        code: 'REGISTRATION_PROCESS_ERROR',
-      });
+      throw new RpcException(
+        createStandardError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          AuthErrorCodes.REGISTRATION_PROCESS_ERROR,
+          undefined,
+          { email, originalError: error.message },
+        ),
+      );
     }
   }
-  async verifyOtp({
-    email,
-    otp,
-  }: VerifyOtpDto) {
+
+  async verifyOtp({ email, otp }: VerifyOtpDto) {
     try {
       const verification = await this.otpService.verifyOtp(email, otp);
 
       if (verification.valid && verification.type === 'register') {
         // Complete registration process
         const tempUserKey = `temp_user:${email}`;
-        const tempUserData = (await this.cacheManager.get(tempUserKey)) as UserPayload;
+        const tempUserData = (await this.cacheManager.get(
+          tempUserKey,
+        )) as UserPayload;
 
         if (!tempUserData) {
-          throw new RpcException({
-            statusCode: HttpStatus.BAD_REQUEST,
-            message: 'Registration data expired. Please register again.',
-            code: 'REGISTRATION_EXPIRED',
-          });
+          throw new RpcException(
+            createStandardError(
+              HttpStatus.BAD_REQUEST,
+              AuthErrorCodes.REGISTRATION_EXPIRED,
+              undefined,
+              { email },
+            ),
+          );
         }
 
         // Mark user as verified and save to permanent storage
@@ -204,17 +238,27 @@ export class LocalService {
         };
       }
 
-      
+      // If we reach here, verification failed
+      throw new RpcException(
+        createStandardError(
+          HttpStatus.UNAUTHORIZED,
+          AuthErrorCodes.OTP_INVALID,
+          undefined,
+          { email },
+        ),
+      );
     } catch (error) {
       if (error instanceof RpcException) {
         throw error;
       }
-      this.logger.error(`Error verifying OTP for ${email}:`, error);
-      throw new RpcException({
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Failed to verify OTP',
-        code: 'OTP_VERIFY_ERROR',
-      });
+      throw new RpcException(
+        createStandardError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          AuthErrorCodes.OTP_VERIFY_ERROR,
+          undefined,
+          { email, originalError: error.message },
+        ),
+      );
     }
   }
 }
