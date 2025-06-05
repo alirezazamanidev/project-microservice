@@ -1,14 +1,13 @@
 export const sessionConfig = {
-  secret: process.env.SESSION_SECRET || 'your-fallback-secret-key',
+  secret: process.env.SESSION_SECRET_KEY || 'your-fallback-secret-key',
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true,
   cookie: {
     secure: process.env.NODE_ENV === 'production', // HTTPS only in production
     httpOnly: true, // Prevent XSS attacks
     maxAge: 24 * 60 * 60 * 1000 * 7, // 7 days in milliseconds
-    sameSite: 'lax', // CSRF protection,
+    sameSite: 'lax' as const, // CSRF protection,
     domain: process.env.NODE_ENV === 'production' ? 'localhost' : 'localhost',
     path: '/',
   },
-  name: 'sessionId', // Custom session cookie name
 };

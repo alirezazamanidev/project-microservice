@@ -6,6 +6,11 @@ export enum PatternNameEnum {
   GET_USER_INFO = 'auth/get-user-info',
   REFRESH_TOKEN = 'auth/refresh-token',
   VERIFY_ACCESS_TOKEN = 'auth/verify-access-token',
+
+  // Email OTP Authentication
+  SEND_OTP = 'auth/send-otp',
+  VERIFY_OTP = 'auth/verify-otp',
+
   // File Service
   UPLOAD_FILE = 'file/upload',
   GET_FILE_URL = 'file/get-url',

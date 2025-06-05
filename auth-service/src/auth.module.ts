@@ -1,29 +1,36 @@
 import { Module } from '@nestjs/common';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
-import { RedisService } from './common/services/redis.service';
+
+import { OtpService } from './services/otp.service';
 import { CacheModule } from '@nestjs/cache-manager';
 import { createKeyv } from '@keyv/redis';
+import { GoogleController } from './controllers/google.controller';
+import { MailerService } from './services/mailer.service';
+import { GoogleService } from './services/google.service';
+import { LocalService } from './services/local.service';
+import { LocalController } from './controllers/local.controller';
 @Module({
   imports: [
     HttpModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath:'.env'
+      envFilePath: '.env',
     }),
     CacheModule.registerAsync({
-    useFactory:async()=>{
-      return {
-        stores:[
-          createKeyv(`redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`)
-        ]
-      }
-    }
-    })
+      isGlobal: true,
+      useFactory: async () => {
+        return {
+          stores: [
+            createKeyv(
+              `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
+            ),
+          ],
+        };
+      },
+    }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, RedisService],
+  controllers: [LocalController, GoogleController],
+  providers: [MailerService, OtpService, GoogleService, LocalService],
 })
 export class AuthModule {}

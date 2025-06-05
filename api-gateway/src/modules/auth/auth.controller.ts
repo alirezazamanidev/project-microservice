@@ -7,39 +7,44 @@ import {
   Res,
   Post,
   Body,
-  UseGuards,
-  UnauthorizedException,
+  ValidationPipe,
+  HttpCode,
+  UseFilters,
 } from '@nestjs/common';
 
 import {
-  ApiBadRequestResponse,
-  ApiOperation,
   ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiOkResponse,
+  ApiBadRequestResponse,
   ApiUnauthorizedResponse,
-  ApiBearerAuth,
+  ApiTooManyRequestsResponse,
+  ApiInternalServerErrorResponse,
 } from '@nestjs/swagger';
 
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-// Define session user interface
-interface SessionUser {
-  userId: string;
-  email: string;
-  isAuthenticated: boolean;
-}
-// Extend the session type to include our custom data
-declare module 'express-session' {
-  interface SessionData {
-    user?: SessionUser;
-  }
-}
+import { IsAuthenticated } from './decorators/auth.decorator';
+import { SendOtpDto, VerifyOtpDto, EmailLoginDto } from './dto/otp.dto';
+import { RpcExceptionFilter } from '../../common/filters/rpc-exception.filter';
+import {
+  GoogleAuthOperation,
+  GoogleCallbackOperation,
+  SendOtpOperation,
+  VerifyOtpOperation,
+  EmailLoginOperation,
+  ProfileOperation,
+  LogoutOperation,
+} from './decorators/auth-swagger.decorators';
 
 @ApiTags('Auth')
 @Controller('auth')
+@UseFilters(RpcExceptionFilter)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @ApiOperation({ summary: 'google login' })
+  @GoogleAuthOperation()
   @Get('google/login')
   async googleAuth(@Res() res: Response) {
     res.redirect(
@@ -47,8 +52,7 @@ export class AuthController {
     );
   }
 
-  @ApiBadRequestResponse({ description: 'bad request' })
-  @ApiOperation({ summary: 'google redirect route' })
+  @GoogleCallbackOperation()
   @Get('google/callback')
   async googleAuthRedirect(
     @Query('code') code: string,
@@ -57,21 +61,12 @@ export class AuthController {
   ) {
     const result = await this.authService.googleCallback(code);
     if (result) {
-      // Create session data
-      req.session.user = {
-        userId: result.id,
-        email: result.email,
-        isAuthenticated: true,
-      };
-
-      // Save session and then save payload to auth service
       req.session.save(async (err) => {
         if (err) {
           console.error('❌ Session save error:', err);
           throw err;
         }
 
-        // After session is saved, send payload to auth service
         const sessionId = req.sessionID;
         const userPayload = {
           userId: result.id,
@@ -80,34 +75,77 @@ export class AuthController {
           sessionId: sessionId,
         };
 
-        // Send payload to auth service
         await this.authService.saveUserPayload(userPayload);
-      
-        
       });
 
-      // redirct to frontEnd url
       return res.redirect('http://localhost:3000/');
     }
   }
 
-  @Get('payload')
-  payload(@Req() req: Request) {
-    if (req.session.user) {
-      return {
-        success: true,
-        payload: {
-          userId: req.session.user.userId,
-          email: req.session.user.email,
-          isAuthenticated: req.session.user.isAuthenticated,
-          sessionId: req.sessionID,
-        },
-      };
-    } else {
-      return {
-        success: false,
-        message: 'No active session found',
+  @SendOtpOperation()
+  @Post('send-otp')
+  @HttpCode(HttpStatus.OK)
+  async sendOtp(@Body(ValidationPipe) sendOtpDto: SendOtpDto) {
+    return this.authService.sendOtp(sendOtpDto);
+  }
+
+  @VerifyOtpOperation()
+  @Post('verify-otp')
+  @HttpCode(HttpStatus.OK)
+  async verifyOtp(@Body(ValidationPipe) verifyOtpDto: VerifyOtpDto) {
+    return this.authService.verifyOtp(verifyOtpDto);
+  }
+
+  @EmailLoginOperation()
+  @Post('email-login')
+  @HttpCode(HttpStatus.OK)
+  async emailLogin(
+    @Body(ValidationPipe) emailLoginDto: EmailLoginDto,
+    @Req() req: Request,
+  ) {
+    const result = await this.authService.emailLogin(emailLoginDto);
+
+    if (result.success && result.sessionId) {
+      req.session.user = {
+        userId: result.userInfo?.email || '',
+        email: result.userInfo?.email || '',
+        isAuthenticated: true,
+        loginTime: new Date(),
       };
     }
+
+    return result;
+  }
+
+  @IsAuthenticated()
+  @ProfileOperation()
+  @Get('profile')
+  getProfile(@Req() req: Request) {
+    return {
+      success: true,
+      message: 'Profile retrieved successfully',
+      user: req.user,
+    };
+  }
+
+  @IsAuthenticated()
+  @LogoutOperation()
+  @Post('logout')
+  logout(@Req() req: Request, @Res() res: Response) {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('❌ Session destroy error:', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to logout',
+        });
+      }
+
+      res.clearCookie('sessionId');
+      return res.json({
+        success: true,
+        message: 'Logged out successfully',
+      });
+    });
   }
 }
