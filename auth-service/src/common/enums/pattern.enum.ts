@@ -8,7 +8,8 @@ export enum PatternNameEnum {
   VERIFY_ACCESS_TOKEN = 'auth/verify-access-token',
 
   // Email OTP Authentication
-  SEND_OTP = 'auth/send-otp',
+  LOCAL_LOGIN = 'auth/local-login',
+  LOCAL_REGISTER = 'auth/local-register',
   VERIFY_OTP = 'auth/verify-otp',
 
   // File Service

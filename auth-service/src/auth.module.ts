@@ -10,6 +10,7 @@ import { MailerService } from './services/mailer.service';
 import { GoogleService } from './services/google.service';
 import { LocalService } from './services/local.service';
 import { LocalController } from './controllers/local.controller';
+import { UserService } from './services/user.service';
 @Module({
   imports: [
     HttpModule,
@@ -31,6 +32,6 @@ import { LocalController } from './controllers/local.controller';
     }),
   ],
   controllers: [LocalController, GoogleController],
-  providers: [MailerService, OtpService, GoogleService, LocalService],
+  providers: [MailerService, OtpService, GoogleService, LocalService, UserService],
 })
 export class AuthModule {}

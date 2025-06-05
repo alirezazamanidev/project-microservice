@@ -12,30 +12,21 @@ import {
   UseFilters,
 } from '@nestjs/common';
 
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBody,
-  ApiOkResponse,
-  ApiBadRequestResponse,
-  ApiUnauthorizedResponse,
-  ApiTooManyRequestsResponse,
-  ApiInternalServerErrorResponse,
-} from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { IsAuthenticated } from './decorators/auth.decorator';
-import { SendOtpDto, VerifyOtpDto, EmailLoginDto } from './dto/otp.dto';
+import { VerifyOtpDto, LocalLoginDto, LocalRegisterDto } from './dto/auth.dto';
 import { RpcExceptionFilter } from '../../common/filters/rpc-exception.filter';
 import {
   GoogleAuthOperation,
   GoogleCallbackOperation,
-  SendOtpOperation,
   VerifyOtpOperation,
-  EmailLoginOperation,
   ProfileOperation,
   LogoutOperation,
+  LocalLoginOperation,
+  LocalRegisterOperation,
 } from './decorators/auth-swagger.decorators';
 
 @ApiTags('Auth')
@@ -82,41 +73,26 @@ export class AuthController {
     }
   }
 
-  @SendOtpOperation()
-  @Post('send-otp')
+  @LocalLoginOperation()
+  @Post('local/login')
   @HttpCode(HttpStatus.OK)
-  async sendOtp(@Body(ValidationPipe) sendOtpDto: SendOtpDto) {
-    return this.authService.sendOtp(sendOtpDto);
+   localLogin(@Body(ValidationPipe) localLoginDto: LocalLoginDto) {
+    return this.authService.localLogin(localLoginDto);
   }
-
+  @LocalRegisterOperation()
+  @Post('local/register')
+  @HttpCode(HttpStatus.OK)
+   localRegister(@Body(ValidationPipe) localRegisterDto: LocalRegisterDto) {
+    return this.authService.localRegister(localRegisterDto);
+  }
   @VerifyOtpOperation()
-  @Post('verify-otp')
+  @Post('local/verify-otp')
   @HttpCode(HttpStatus.OK)
   async verifyOtp(@Body(ValidationPipe) verifyOtpDto: VerifyOtpDto) {
     return this.authService.verifyOtp(verifyOtpDto);
   }
 
-  @EmailLoginOperation()
-  @Post('email-login')
-  @HttpCode(HttpStatus.OK)
-  async emailLogin(
-    @Body(ValidationPipe) emailLoginDto: EmailLoginDto,
-    @Req() req: Request,
-  ) {
-    const result = await this.authService.emailLogin(emailLoginDto);
-
-    if (result.success && result.sessionId) {
-      req.session.user = {
-        userId: result.userInfo?.email || '',
-        email: result.userInfo?.email || '',
-        isAuthenticated: true,
-        loginTime: new Date(),
-      };
-    }
-
-    return result;
-  }
-
+ 
   @IsAuthenticated()
   @ProfileOperation()
   @Get('profile')

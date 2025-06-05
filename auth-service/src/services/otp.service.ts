@@ -16,13 +16,18 @@ export class OtpService {
     return randomInt(100000, 999999).toString();
   }
 
-  async saveOtp(email: string, otp: string): Promise<void> {
+  async saveOtp(
+    email: string,
+    otp: string,
+    type: 'login' | 'register' = 'login',
+  ): Promise<void> {
     try {
       const otpRecord: OtpRecord = {
         email,
         otp,
         expiresAt: new Date(Date.now() + this.OTP_EXPIRY_MINUTES * 60 * 1000),
         attempts: 0,
+        type,
       };
       const key = `otp:${email}`;
       const ttl = this.OTP_EXPIRY_MINUTES * 60 * 1000; // TTL in milliseconds
@@ -45,11 +50,10 @@ export class OtpService {
   async verifyOtp(
     email: string,
     providedOtp: string,
-  ): Promise<{ valid: boolean; message: string }> {
+  ): Promise<{ valid: boolean; message: string; type?: 'login' | 'register' }> {
     const key = `otp:${email}`;
     const otpRecord: OtpRecord | null = await this.cacheManager.get(key);
 
-      
     if (!otpRecord)
       throw new RpcException({
         statusCode: HttpStatus.UNAUTHORIZED,
@@ -91,14 +95,12 @@ export class OtpService {
     await this.cacheManager.del(key);
     this.logger.log(`OTP verified successfully for email: ${email}`);
 
-    return { valid: true, message: 'OTP code is valid' };
+    return { valid: true, message: 'OTP code is valid', type: otpRecord.type };
   }
 
   async hasValidOtp(email: string): Promise<boolean> {
     const key = `otp:${email}`;
     const otpRecord: OtpRecord | null = await this.cacheManager.get(key);
-
-    console.log('Checking valid OTP for email:', email, 'Record:', otpRecord);
 
     if (!otpRecord) return false;
 

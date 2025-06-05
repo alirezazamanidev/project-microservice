@@ -3,21 +3,13 @@ import { ClientProxy } from '@nestjs/microservices';
 import { InjectAuthClient } from '../../common/decorators/inject-client.decorator';
 import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { PatternNameEnum } from 'src/common/enums/pattern.enum';
-import { SendOtpDto, VerifyOtpDto, EmailLoginDto } from './dto/otp.dto';
+import { VerifyOtpDto, LocalLoginDto, LocalRegisterDto } from './dto/auth.dto';
 
-export interface SessionData {
-  userId: string;
-  email: string;
-  isAuthenticated: boolean;
-  loginTime: Date;
-}
 
 export interface UserPayload {
-  userId: string;
   email: string;
   name?: string;
   picture?: string;
-  sessionId: string;
 }
 
 export interface EmailLoginResponse {
@@ -50,9 +42,16 @@ export class AuthService {
   }
 
   // Email OTP Authentication Methods
-  async sendOtp(sendOtpDto: SendOtpDto) {
+  async localLogin(localLoginDto: LocalLoginDto) {
     const result = await lastValueFrom(
-      this.authClient.send(PatternNameEnum.SEND_OTP, sendOtpDto),
+      this.authClient.send(PatternNameEnum.LOCAL_LOGIN, localLoginDto),
+    );
+    return result;
+  }
+
+  async localRegister(localRegisterDto: LocalRegisterDto) {
+    const result = await lastValueFrom(
+      this.authClient.send(PatternNameEnum.LOCAL_REGISTER, localRegisterDto),
     );
     return result;
   }
@@ -64,10 +63,5 @@ export class AuthService {
     return result;
   }
 
-  async emailLogin(emailLoginDto: EmailLoginDto): Promise<EmailLoginResponse> {
-    const result = await lastValueFrom(
-      this.authClient.send(PatternNameEnum.EMAIL_LOGIN, emailLoginDto),
-    );
-    return result;
-  }
+  
 }

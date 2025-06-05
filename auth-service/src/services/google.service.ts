@@ -1,12 +1,17 @@
 import { HttpService } from "@nestjs/axios";
-import { HttpStatus, Injectable, Logger } from "@nestjs/common";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { HttpStatus, Inject, Injectable, Logger } from "@nestjs/common";
 import { RpcException } from "@nestjs/microservices";
+import { Cache } from "cache-manager";
 import { catchError, lastValueFrom } from "rxjs";
+import { UserService } from "./user.service";
 
 @Injectable()
 export class GoogleService {
   private readonly logger = new Logger(GoogleService.name);
-  constructor(private readonly httpService: HttpService) {}
+  constructor(private readonly httpService: HttpService,
+    private readonly userService: UserService
+  ) {}
 
   
   async googleLogin(code: string) {
@@ -54,6 +59,8 @@ export class GoogleService {
           ),
       );
 
+      const { email, name, picture } = profile;
+      await this.userService.saveUserPayload({ email, name, picture });
       return profile;
     } catch (error) {
       if (error instanceof RpcException) {

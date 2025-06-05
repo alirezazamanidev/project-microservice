@@ -1,5 +1,10 @@
-export interface SendOtpDto {
+export interface LocalLoginDto {
   email: string;
+}
+
+export interface LocalRegisterDto {
+  email: string;
+  fullname: string;
 }
 
 export interface VerifyOtpDto {
@@ -17,6 +22,7 @@ export interface OtpRecord {
   otp: string;
   expiresAt: Date;
   attempts: number;
+  type: 'login' | 'register';
 }
 
 export interface EmailLoginResponse {
@@ -30,9 +36,9 @@ export interface EmailLoginResponse {
 }
 
 export interface UserPayload {
-  userId: string;
   email: string;
   name?: string;
   picture?: string;
-  sessionId: string;
+  isVerified?: boolean;
+  registeredAt?: Date;
 }

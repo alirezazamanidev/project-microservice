@@ -8,8 +8,10 @@ import {
   ApiTooManyRequestsResponse,
   ApiInternalServerErrorResponse,
   ApiConsumes,
+  ApiNotFoundResponse,
+  ApiConflictResponse,
 } from '@nestjs/swagger';
-import { SendOtpDto, VerifyOtpDto, EmailLoginDto } from '../dto/otp.dto';
+import {  VerifyOtpDto, LocalLoginDto, LocalRegisterDto } from '../dto/auth.dto';
 
 export function GoogleAuthOperation() {
   return applyDecorators(
@@ -31,22 +33,97 @@ export function GoogleCallbackOperation() {
     }),
   );
 }
-
-export function SendOtpOperation() {
+export function LocalRegisterOperation() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Send OTP to Email',
+      summary: 'Register new user account',
+      description: 'Creates a new user account with email and full name',
+    }),
+    ApiConsumes('application/x-www-form-urlencoded', 'application/json'),
+    ApiBody({ type: LocalRegisterDto }),
+    ApiOkResponse({
+      description: 'User registered successfully',
+      schema: {
+        example: {
+          success: true,
+          message: 'User registered successfully',
+        },
+      },
+    }),
+    ApiConflictResponse({
+      description: 'User already exists',
+      schema: {
+        example: {
+          success: false,
+          error: {
+            code: 'USER_ALREADY_EXISTS',
+            message: 'User already exists',
+            timestamp: '2023-01-01T00:00:00.000Z',
+            path: '/auth/local/register',
+          },
+        },
+      },
+    }),
+    ApiBadRequestResponse({
+      description: 'Invalid request - validation errors',
+      schema: {
+        example: {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid email format or missing required fields',
+            timestamp: '2023-01-01T00:00:00.000Z',
+            path: '/auth/local/register',
+          },
+        },
+      },
+    }),
+    ApiInternalServerErrorResponse({
+      description: 'Internal server error',
+      schema: {
+        example: {
+          success: false,
+          error: {
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'An unexpected error occurred',
+            timestamp: '2023-01-01T00:00:00.000Z',
+            path: '/auth/local/register',
+          },
+        },
+      },
+    }),
+  );
+}
+
+export function LocalLoginOperation() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Send login otp to email',
       description:
         'Sends a 6-digit verification code to user email. Each email can only have one active code.',
     }),
     ApiConsumes('application/x-www-form-urlencoded', 'application/json'),
-    ApiBody({ type: SendOtpDto }),
+    ApiBody({ type: LocalLoginDto }),
     ApiOkResponse({
       description: 'OTP sent successfully',
       schema: {
         example: {
           success: true,
           message: 'OTP sent to your email successfully',
+        },
+      },
+    }),
+    ApiNotFoundResponse({
+      description: 'Account not found',
+      schema: {
+        example: {
+          success: false,
+          error: {
+            code: 'ACCOUNT_NOT_FOUND',
+            message: 'Account not found',
+            timestamp: '2023-01-01T00:00:00.000Z',
+            path: '/auth/local-login',
+          },
         },
       },
     }),
@@ -87,7 +164,7 @@ export function SendOtpOperation() {
             code: 'EMAIL_SEND_ERROR',
             message: 'Failed to send email',
             timestamp: '2023-01-01T00:00:00.000Z',
-            path: '/auth/send-otp',
+            path: '/auth/local/login',
           },
         },
       },
@@ -122,7 +199,7 @@ export function VerifyOtpOperation() {
             code: 'INVALID_OTP_FORMAT',
             message: 'OTP code must be 6 digits',
             timestamp: '2023-01-01T00:00:00.000Z',
-            path: '/auth/verify-otp',
+            path: '/auth/local/verify-otp',
           },
         },
       },
@@ -137,60 +214,6 @@ export function VerifyOtpOperation() {
             message: 'Invalid or expired OTP code',
             timestamp: '2023-01-01T00:00:00.000Z',
             path: '/auth/verify-otp',
-          },
-        },
-      },
-    }),
-  );
-}
-
-export function EmailLoginOperation() {
-  return applyDecorators(
-    ApiOperation({
-      summary: 'Login with Email and OTP',
-      description:
-        'After verifying OTP code, user logs in and session is created',
-    }),
-    ApiConsumes('application/x-www-form-urlencoded', 'application/json'),
-    ApiBody({ type: EmailLoginDto }),
-    ApiOkResponse({
-      description: 'Login successful',
-      schema: {
-        example: {
-          success: true,
-          message: 'Login successful',
-          sessionId: 'uuid-session-id',
-          userInfo: {
-            email: 'user@example.com',
-            name: 'user',
-          },
-        },
-      },
-    }),
-    ApiBadRequestResponse({
-      description: 'Missing required fields',
-      schema: {
-        example: {
-          success: false,
-          error: {
-            code: 'MISSING_REQUIRED_FIELDS',
-            message: 'Required fields are incomplete',
-            timestamp: '2023-01-01T00:00:00.000Z',
-            path: '/auth/email-login',
-          },
-        },
-      },
-    }),
-    ApiUnauthorizedResponse({
-      description: 'Invalid or expired OTP',
-      schema: {
-        example: {
-          success: false,
-          error: {
-            code: 'INVALID_OTP',
-            message: 'Invalid or expired OTP code',
-            timestamp: '2023-01-01T00:00:00.000Z',
-            path: '/auth/email-login',
           },
         },
       },
