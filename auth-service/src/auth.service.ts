@@ -1,11 +1,25 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
 import { RpcException } from '@nestjs/microservices';
+import { RedisService } from './common/services/redis.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+
+interface UserPayload {
+  userId: string;
+  email: string;
+  name?: string;
+  picture?: string;
+  sessionId: string;
+}
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+  ) {}
 
   async googleLogin(code: string) {
     // Exchange authorization code for access token
@@ -43,4 +57,60 @@ export class AuthService {
 
     return profile;
   }
+
+  async saveUserPayload(payload: UserPayload) {
+    // Save payload in Redis using sessionId as key
+    await this.cacheManager.set(
+      `sess:${payload.sessionId}`,
+      payload,
+      60 * 60 * 24 * 7, // 7 days
+    );
+
+    return {
+      success: true,
+      message: 'User payload saved successfully',
+      sessionId: payload.sessionId,
+    };
+  }
+
+  //   async getUserPayloadBySession(
+  //     sessionId: string,
+  //   ): Promise<UserPayload | null> {
+  //     try {
+  //       return await this.redisService.getUserPayload(sessionId);
+  //     } catch (error) {
+  //       console.error('❌ Error getting user payload:', error);
+  //       return null;
+  //     }
+  //   }
+
+  //   async deleteUserSession(
+  //     sessionId: string,
+  //   ): Promise<{ success: boolean; message: string }> {
+  //     try {
+  //       const deleted = await this.redisService.deleteUserPayload(sessionId);
+
+  //       return {
+  //         success: deleted,
+  //         message: deleted
+  //           ? 'Session deleted successfully'
+  //           : 'Failed to delete session',
+  //       };
+  //     } catch (error) {
+  //       console.error('❌ Error deleting session:', error);
+  //       return {
+  //         success: false,
+  //         message: 'Failed to delete session',
+  //       };
+  //     }
+  //   }
+
+  //   async getAllActiveSessions(): Promise<UserPayload[]> {
+  //     try {
+  //       return await this.redisService.getAllActiveSessions();
+  //     } catch (error) {
+  //       console.error('❌ Error getting active sessions:', error);
+  //       return [];
+  //     }
+  //   }
 }

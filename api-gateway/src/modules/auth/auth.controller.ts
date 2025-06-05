@@ -50,17 +50,64 @@ export class AuthController {
   @ApiBadRequestResponse({ description: 'bad request' })
   @ApiOperation({ summary: 'google redirect route' })
   @Get('google/callback')
-  async googleAuthRedirect(@Query('code') code: string, @Req() req: Request,@Res() res: Response) {
+  async googleAuthRedirect(
+    @Query('code') code: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     const result = await this.authService.googleCallback(code);
     if (result) {
+      // Create session data
       req.session.user = {
         userId: result.id,
         email: result.email,
         isAuthenticated: true,
       };
 
+      // Save session and then save payload to auth service
+      req.session.save(async (err) => {
+        if (err) {
+          console.error('❌ Session save error:', err);
+          throw err;
+        }
+
+        // After session is saved, send payload to auth service
+        const sessionId = req.sessionID;
+        const userPayload = {
+          userId: result.id,
+          email: result.email,
+          picture: result.picture || '',
+          sessionId: sessionId,
+        };
+
+        // Send payload to auth service
+        await this.authService.saveUserPayload(userPayload);
+      
+        
+      });
+
+      // redirct to frontEnd url
       return res.redirect('http://localhost:3000/');
     }
-    
+  }
+
+  @Get('payload')
+  payload(@Req() req: Request) {
+    if (req.session.user) {
+      return {
+        success: true,
+        payload: {
+          userId: req.session.user.userId,
+          email: req.session.user.email,
+          isAuthenticated: req.session.user.isAuthenticated,
+          sessionId: req.sessionID,
+        },
+      };
+    } else {
+      return {
+        success: false,
+        message: 'No active session found',
+      };
+    }
   }
 }
