@@ -28,13 +28,12 @@ import { memoryStorage } from 'multer';
 import { Request } from 'express';
 import { UploadFileDto } from './dtos/upload-file.dto';
 import { PatternNameEnum } from 'src/common/enums/pattern.enum';
-import { CorrelationIdInterceptor } from 'src/common/inteceptors/CorrelationId.interceptor';
+
 import { ApiCustomResponse } from 'src/common/decorators/swagger-response';
 import { FileDto, PresignedFileDto } from './dtos/file.dto';
 import { ErrorResponseDto } from 'src/common/dtos/base-error-response.dto';
 @ApiTags('File')
 @IsAuthenticated()
-@UseInterceptors(new CorrelationIdInterceptor())
 @Controller('file')
 export class FileController {
   constructor(
@@ -74,7 +73,7 @@ export class FileController {
     const result = await lastValueFrom(
       this.fileClientService.send(PatternNameEnum.UPLOAD_FILE, {
         file,
-        user: req.user,
+        // user: req.user,
       }),
     );
     return {
@@ -100,7 +99,7 @@ export class FileController {
   async listUserFiles(@Req() req: Request) {
     const result = await lastValueFrom(
       this.fileClientService.send(PatternNameEnum.LIST_FILES, {
-        user: req.user,
+        // user: req.user,
       }),
     );
     return {

@@ -24,6 +24,8 @@ export class RpcErrorInterceptor implements NestInterceptor {
     return next.handle().pipe(
       timeout(60000),
       catchError((error) => {
+        console.log(error);
+        
         if (error instanceof TimeoutError) {
           return throwError(
             () =>

@@ -11,8 +11,8 @@ import { Observable } from 'rxjs';
 export class AuthenticatedGuard implements CanActivate {
   canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<Request>();
-    if (request.isAuthenticated && !request.isAuthenticated())
-      throw new UnauthorizedException('login again');
+    // if (request.isAuthenticated && !request.isAuthenticated())
+    //   throw new UnauthorizedException('login again');
     return true;
   }
 }

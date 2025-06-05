@@ -12,15 +12,15 @@ async function bootstrap() {
         urls: [
           `amqp://${process.env.RABBITMQ_HOST}:${process.env.RABBITMQ_PORT}`,
         ],
-        queue: 'file',
+        queue: 'auth',
         queueOptions: {
           durable: false,
         },
       },
     },
   );
-  await app.listen();
-    app.useGlobalFilters(new RpcAllExceptionsFilter());
+
+  app.useGlobalFilters(new RpcAllExceptionsFilter());
   await app.listen();
   console.log('========================================');
 

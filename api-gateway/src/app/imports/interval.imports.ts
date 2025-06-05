@@ -1,8 +1,5 @@
+import { AuthModule } from 'src/modules/auth/auth.module';
+import { FileModule } from 'src/modules/file/file.module';
+import { HealthModule } from 'src/modules/health/health.module';
 
-import { AuthModule } from "src/modules/auth/auth.module";
-import { FileModule } from "src/modules/file/file.module";
-
-export const appIntervalImports=[
-   AuthModule,
-   FileModule
-]
+export const appIntervalImports = [AuthModule, FileModule, HealthModule];

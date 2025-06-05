@@ -2,55 +2,65 @@ import {
   Controller,
   Get,
   HttpStatus,
+  Query,
   Req,
-  UnauthorizedException,
+  Res,
+  Post,
+  Body,
   UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
 
-import { ApiBadRequestResponse, ApiOperation, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
-import { IsAuthenticated } from './decorators/auth.decorator';
-import { UserDto } from './dto/user.dto';
-import { ErrorResponseDto } from 'src/common/dtos/base-error-response.dto';
-import { ApiCustomResponse } from 'src/common/decorators/swagger-response';
+import {
+  ApiBadRequestResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+
+import { Request, Response } from 'express';
+import { AuthService } from './auth.service';
+// Define session user interface
+interface SessionUser {
+  userId: string;
+  email: string;
+  isAuthenticated: boolean;
+}
+// Extend the session type to include our custom data
+declare module 'express-session' {
+  interface SessionData {
+    user?: SessionUser;
+  }
+}
+
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
   @ApiOperation({ summary: 'google login' })
   @Get('google/login')
-  @ApiCustomResponse({description:'Redirecting to Google for authentication',status:200})
-  @UseGuards(AuthGuard('google'))
-  async googleAuth() {
-    return { message: 'Redirecting to Google for authentication' };
+  async googleAuth(@Res() res: Response) {
+    res.redirect(
+      `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.GOOGLE_CALLBACK_URL}&response_type=code&scope=profile email`,
+    );
   }
-  @ApiBadRequestResponse({description:'bad request',type:ErrorResponseDto})
-  @ApiCustomResponse({description:"logged in successFully",status:HttpStatus.OK})
+
+  @ApiBadRequestResponse({ description: 'bad request' })
   @ApiOperation({ summary: 'google redirect route' })
-  @UseGuards(AuthGuard('google'))
   @Get('google/callback')
-  async googleAuthRedirect(@Req() req: Request) {
-    if (!req?.user) throw new UnauthorizedException('login failed!');
-    await new Promise<void>((resolve, reject) => {
-      req.logIn(req.user!, (err) => {
-        if (err) reject(new UnauthorizedException('login failed'));
-        else resolve();
-      });
-    });
+  async googleAuthRedirect(@Query('code') code: string, @Req() req: Request,@Res() res: Response) {
+    const result = await this.authService.googleCallback(code);
+    if (result) {
+      req.session.user = {
+        userId: result.id,
+        email: result.email,
+        isAuthenticated: true,
+      };
 
-    return { message: 'logged In successFully' };
-  }
-
-  @ApiCustomResponse({status:HttpStatus.OK,model:UserDto,description:"Get Payload User"})
-  @ApiUnauthorizedResponse({description:"Unauthorized user",type:ErrorResponseDto})
-  @IsAuthenticated()
-  @ApiOperation({ summary: 'user payload' })
-  @Get('payload')
-  payload(@Req() req: Request){
-    return{
-     
-      message:"user payload",
-      data:req.user as UserDto,
+      return res.redirect('http://localhost:3000/');
     }
+    
   }
 }
