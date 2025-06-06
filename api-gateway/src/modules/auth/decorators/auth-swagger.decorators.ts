@@ -11,7 +11,7 @@ import {
   ApiNotFoundResponse,
   ApiConflictResponse,
 } from '@nestjs/swagger';
-import {  VerifyOtpDto, LocalLoginDto, LocalRegisterDto } from '../dto/auth.dto';
+import { VerifyOtpDto, LocalLoginDto, LocalRegisterDto } from '../dto/auth.dto';
 
 export function GoogleAuthOperation() {
   return applyDecorators(
@@ -33,6 +33,28 @@ export function GoogleCallbackOperation() {
     }),
   );
 }
+
+export function AppleAuthOperation() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Apple OAuth Login',
+      description: 'Redirects user to Apple OAuth consent screen',
+    }),
+  );
+}
+
+export function AppleCallbackOperation() {
+  return applyDecorators(
+    ApiOperation({
+      summary: 'Apple OAuth Callback',
+      description: 'Handles Apple OAuth callback and creates user session',
+    }),
+    ApiBadRequestResponse({
+      description: 'Invalid authorization code or OAuth error',
+    }),
+  );
+}
+
 export function LocalRegisterOperation() {
   return applyDecorators(
     ApiOperation({

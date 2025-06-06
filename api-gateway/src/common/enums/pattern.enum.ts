@@ -1,6 +1,7 @@
 export enum PatternNameEnum {
   // Auth Service
   GOOGLE_LOGIN = 'auth/google-login',
+  APPLE_LOGIN = 'auth/apple-login',
   SAVE_USER_PAYLOAD = 'auth/save-user-payload',
   VALIDATE_USER = 'auth/validate-user',
   GET_USER_INFO = 'auth/get-user-info',

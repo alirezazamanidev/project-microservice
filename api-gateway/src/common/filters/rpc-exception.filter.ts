@@ -40,7 +40,6 @@ export class RpcExceptionFilter implements ExceptionFilter {
     const httpStatus = this.mapRpcToHttpStatus(error);
     const errorResponse = this.buildErrorResponse(error, request);
 
-
     response.status(httpStatus).json(errorResponse);
   }
 
@@ -54,6 +53,7 @@ export class RpcExceptionFilter implements ExceptionFilter {
     const codeToStatusMap: Record<string, number> = {
       // Authentication errors
       GOOGLE_AUTH_ERROR: HttpStatus.UNAUTHORIZED,
+      APPLE_AUTH_ERROR: HttpStatus.UNAUTHORIZED,
       PROFILE_FETCH_ERROR: HttpStatus.UNAUTHORIZED,
       INVALID_OTP: HttpStatus.UNAUTHORIZED,
       OTP_EXPIRED: HttpStatus.UNAUTHORIZED,

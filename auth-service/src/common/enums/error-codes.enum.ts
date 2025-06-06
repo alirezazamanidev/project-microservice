@@ -43,6 +43,10 @@ export enum AuthErrorCodes {
   GOOGLE_AUTH_ERROR = 'GOOGLE_AUTH_ERROR',
   GOOGLE_TOKEN_INVALID = 'GOOGLE_TOKEN_INVALID',
 
+  // Apple Auth Errors
+  APPLE_AUTH_ERROR = 'APPLE_AUTH_ERROR',
+  APPLE_TOKEN_INVALID = 'APPLE_TOKEN_INVALID',
+
   // Token Errors
   TOKEN_EXPIRED = 'TOKEN_EXPIRED',
   TOKEN_INVALID = 'TOKEN_INVALID',
@@ -93,6 +97,10 @@ export enum AuthErrorMessages {
   // Google Auth Messages
   GOOGLE_AUTH_ERROR = 'Google authentication failed. Please try again.',
   GOOGLE_TOKEN_INVALID = 'Invalid Google token.',
+
+  // Apple Auth Messages
+  APPLE_AUTH_ERROR = 'Apple authentication failed. Please try again.',
+  APPLE_TOKEN_INVALID = 'Invalid Apple token.',
 
   // Token Messages
   TOKEN_EXPIRED = 'Token has expired. Please login again.',

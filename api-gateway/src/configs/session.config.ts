@@ -1,7 +1,7 @@
 export const sessionConfig = {
-  secret: process.env.SESSION_SECRET_KEY || 'your-fallback-secret-key',
+  secret: process.env.SESSION_SECRET_KEY ,
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production', // HTTPS only in production
     httpOnly: true, // Prevent XSS attacks

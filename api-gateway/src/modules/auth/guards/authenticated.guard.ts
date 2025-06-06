@@ -23,7 +23,7 @@ export class AuthenticatedGuard implements CanActivate {
       throw new UnauthorizedException('Session not found. Please login again');
     const payload = await lastValueFrom(
       this.authClient.send(PatternNameEnum.GET_USER_INFO, {
-        sessionId: request.sessionID,
+       
       }),
     );
     if (!payload) {

@@ -5,7 +5,6 @@ import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { PatternNameEnum } from 'src/common/enums/pattern.enum';
 import { VerifyOtpDto, LocalLoginDto, LocalRegisterDto } from './dto/auth.dto';
 
-
 export interface UserPayload {
   email: string;
   name?: string;
@@ -29,6 +28,14 @@ export class AuthService {
   async googleCallback(code: string) {
     const result = await lastValueFrom(
       this.authClient.send(PatternNameEnum.GOOGLE_LOGIN, { code }),
+    );
+
+    return result;
+  }
+
+  async appleCallback(code: string, state?: string) {
+    const result = await lastValueFrom(
+      this.authClient.send(PatternNameEnum.APPLE_LOGIN, { code, state }),
     );
 
     return result;
@@ -62,6 +69,4 @@ export class AuthService {
     );
     return result;
   }
-
-  
 }
