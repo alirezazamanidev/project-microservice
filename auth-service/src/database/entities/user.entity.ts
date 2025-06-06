@@ -13,7 +13,7 @@ export class UserEntity  {
   @Column({ unique: true })
   email: string;
   @Column({})
-  fullName: string;
+  fullname: string;
   @Column({ default: false })
   verifyEmail: boolean;
   @CreateDateColumn()

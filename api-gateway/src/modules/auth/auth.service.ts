@@ -41,13 +41,13 @@ export class AuthService {
     return result;
   }
 
-  async saveUserPayload(payload: UserPayload) {
-    const result = await lastValueFrom(
-      this.authClient.send(PatternNameEnum.SAVE_USER_PAYLOAD, payload),
-    );
-    return result;
-  }
+ async  saveOrUpdateUser(userDto:{sessionId:string,email:string,fullname:string,picture:string}){
 
+  const result=await lastValueFrom(
+    this.authClient.send(PatternNameEnum.CREATE_OR_UPDATE_USER,userDto)
+  )
+  return result
+ }
   // Email OTP Authentication Methods
   async localLogin(localLoginDto: LocalLoginDto) {
     const result = await lastValueFrom(
@@ -68,5 +68,17 @@ export class AuthService {
       this.authClient.send(PatternNameEnum.VERIFY_OTP, verifyOtpDto),
     );
     return result;
+  }
+
+  async removeUserSession(sessionId: string) {
+    try {
+      const result = await lastValueFrom(
+        this.authClient.send(PatternNameEnum.REMOVE_SESSION, { sessionId }),
+      );
+      return result;
+    } catch (error) {
+      console.error('Error removing session from auth service:', error);
+      return false;
+    }
   }
 }

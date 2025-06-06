@@ -6,12 +6,17 @@ import {
   LocalLoginDto,
   LocalRegisterDto,
   VerifyOtpDto,
+  UserDto,
 } from 'src/common/interfaces/auth.interface';
-import { LocalService } from 'src/services/local.service';
+import { LocalService } from 'src/app/services/local.service';
+import { UserService } from 'src/app/services/user.service';
 
 @Controller('local')
 export class LocalController {
-  constructor(private readonly localService: LocalService) {}
+  constructor(
+    private readonly localService: LocalService,
+    private readonly userService: UserService,
+  ) {}
 
   @MessagePattern(PatternNameEnum.LOCAL_LOGIN)
   async localLogin(@Payload() localLoginDto: LocalLoginDto) {
@@ -26,5 +31,20 @@ export class LocalController {
   @MessagePattern(PatternNameEnum.VERIFY_OTP)
   async verifyOtp(@Payload() verifyOtpDto: VerifyOtpDto) {
     return this.localService.verifyOtp(verifyOtpDto);
+  }
+
+  @MessagePattern(PatternNameEnum.SAVE_USER_PAYLOAD)
+  async saveUserPayload(@Payload() payload: any) {
+    return this.userService.saveUserPayload(payload);
+  }
+
+  @MessagePattern(PatternNameEnum.GET_USER_INFO)
+  async getUserInfo(@Payload() data: { sessionId?: string; email?: string }) {
+    return this.userService.getUserInfo(data);
+  }
+
+  @MessagePattern(PatternNameEnum.REMOVE_SESSION)
+  async removeSession(@Payload() data: { sessionId: string }) {
+    return this.userService.removeUserSession(data.sessionId);
   }
 }

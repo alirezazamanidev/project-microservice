@@ -135,9 +135,10 @@ export class LocalService {
 
       // Store user data temporarily in Redis (will be moved to permanent storage after OTP verification)
       const tempUserKey = `temp_user:${email}`;
-      const tempUserData = {
+      const tempUserData: UserPayload = {
         email,
-        name: fullname,
+        fullName: fullname,
+        verifyEmail: false,
         isVerified: false,
         registeredAt: new Date(),
       };

@@ -10,17 +10,17 @@ import { TypeOrmDbConfig } from './common/configs/typeorm.config';
 import { UserEntity } from './database/entities/user.entity';
 
 // Controllers
-import { GoogleController } from './controllers/google.controller';
-import { AppleController } from './controllers/apple.controller';
-import { LocalController } from './controllers/local.controller';
+import { GoogleController } from './app/controllers/google.controller';
+import { AppleController } from './app/controllers/apple.controller';
+import { LocalController } from './app/controllers/local.controller';
 
 // Services
-import { OtpService } from './services/otp.service';
-import { MailerService } from './services/mailer.service';
-import { GoogleService } from './services/google.service';
-import { AppleService } from './services/apple.service';
-import { LocalService } from './services/local.service';
-import { UserService } from './services/user.service';
+import { OtpService } from './app/services/otp.service';
+import { MailerService } from './app/services/mailer.service';
+import { GoogleService } from './app/services/google.service';
+import { AppleService } from './app/services/apple.service';
+import { LocalService } from './app/services/local.service';
+import { UserService } from './app/services/user.service';
 
 // Configuration
 import { cacheConfig, jwtConfig, envConfig } from './common/configs';

@@ -35,12 +35,34 @@ export interface EmailLoginResponse {
   };
 }
 
+export interface UserDto {
+  email: string;
+  fullName: string;
+  sessionId: string;
+  picture?: string;
+}
+
+// Extended interfaces for session management
 export interface UserPayload {
   email: string;
-  name?: string;
+  fullName?: string;
+  name?: string; // For compatibility with Google/Apple auth
+  verifyEmail?: boolean;
+  isVerified?: boolean; // For local auth after OTP verification
   picture?: string;
-  isVerified?: boolean;
+  sessionId?: string;
+  created_at?: Date;
+  updated_at?: Date;
   registeredAt?: Date;
+}
+
+export interface UserInfo {
+  userId: string;
+  email: string;
+  fullName?: string;
+  picture?: string;
+  isVerified: boolean;
+  sessionId?: string;
 }
 
 // Standardized Error Response Interfaces

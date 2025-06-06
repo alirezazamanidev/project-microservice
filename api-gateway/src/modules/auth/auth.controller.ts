@@ -35,48 +35,48 @@ import {
 
 @ApiTags('Auth')
 @Controller('auth')
-@UseFilters(RpcExceptionFilter)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @GoogleAuthOperation()
+  // @GoogleAuthOperation()
   @Get('google/login')
-  async googleAuth(@Res() res: Response) {
-    res.redirect(
-      `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.GOOGLE_CALLBACK_URL}&response_type=code&scope=profile email`,
-    );
+  googleAuth(@Res() res: Response) {
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.GOOGLE_CALLBACK_URL}&response_type=code&scope=profile email`;
+    res.redirect(url);
   }
 
   @GoogleCallbackOperation()
   @Get('google/callback')
-  async googleAuthRedirect(
-    @Query('code') code: string,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
+  async googleAuthRedirect(@Query('code') code: string, @Req() req: Request) {
     const result = await this.authService.googleCallback(code);
     if (result) {
+      // Save session data
+      req.session.user = {
+        email: result.email,
+        fullname: result.fullname,
+        picture: result.picture,
+      };
+
       req.session.save(async (err) => {
         if (err) {
-          console.error('❌ Session save error:', err);
-          throw err;
+          throw new UnauthorizedException('login again');
         }
-
-        const sessionId = req.sessionID;
-        const userPayload = {
-          userId: result.id,
-          email: result.email,
-          picture: result.picture || '',
-          sessionId: sessionId,
-        };
-
-        await this.authService.saveUserPayload(userPayload);
+      });
+      const user = await this.authService.saveOrUpdateUser({
+        sessionId: req.sessionID,
+        email: result.email,
+        fullname: result.fullname,
+        picture: result?.picture || '',
       });
 
-      return res.redirect('http://localhost:3000/');
+      return {
+        user,
+        message: 'login success',
+      };
+      // return res.redirect('http://localhost:3000/');
     }
   }
-  
+
   @AppleAuthOperation()
   @Get('apple/login')
   async appleAuth(@Res() res: Response) {
@@ -85,36 +85,47 @@ export class AuthController {
     res.redirect(appleAuthUrl);
   }
 
-  @AppleCallbackOperation()
-  @Post('apple/callback')
-  async appleAuthRedirect(
-    @Body('code') code: string,
-    @Body('state') state: string,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
-    const result = await this.authService.appleCallback(code, state);
-    if (result) {
-      req.session.save(async (err) => {
-        if (err) {
-          console.error('❌ Session save error:', err);
-          throw err;
-        }
+  // @AppleCallbackOperation()
+  // @Post('apple/callback')
+  // async appleAuthRedirect(
+  //   @Body('code') code: string,
+  //   @Body('state') state: string,
+  //   @Req() req: Request,
+  //   @Res() res: Response,
+  // ) {
+  //   const result = await this.authService.appleCallback(code, state);
+  //   if (result) {
+  //     const sessionId = req.sessionID;
+  //     const userPayload = {
+  //       userId: result.id,
+  //       email: result.email,
+  //       picture: result.picture || '',
+  //       fullName: result.name || '',
+  //       sessionId: sessionId,
+  //       verifyEmail: true,
+  //     };
 
-        const sessionId = req.sessionID;
-        const userPayload = {
-          userId: result.id,
-          email: result.email,
-          picture: result.picture || '',
-          sessionId: sessionId,
-        };
+  //     // Save user payload in auth service
+  //     await this.authService.saveUserPayload(userPayload);
 
-        await this.authService.saveUserPayload(userPayload);
-      });
+  //     // Save session data
+  //     req.session.user = {
+  //       userId: result.id,
+  //       email: result.email,
+  //       picture: result.picture || '',
+  //       fullName: result.name || '',
+  //       isVerified: true,
+  //     };
 
-      return res.redirect('http://localhost:3000/');
-    }
-  }
+  //     req.session.save((err) => {
+  //       if (err) {
+  //         console.error('❌ Session save error:', err);
+  //       }
+  //     });
+
+  //     return res.redirect('http://localhost:3000/');
+  //   }
+  // }
 
   @LocalLoginOperation()
   @Post('local/login')
@@ -128,28 +139,53 @@ export class AuthController {
   localRegister(@Body(ValidationPipe) localRegisterDto: LocalRegisterDto) {
     return this.authService.localRegister(localRegisterDto);
   }
-  @VerifyOtpOperation()
-  @Post('local/verify-otp')
-  @HttpCode(HttpStatus.OK)
-  async verifyOtp(
-    @Body(ValidationPipe) verifyOtpDto: VerifyOtpDto,
-    @Req() req: Request,
-  ) {
-    const result = await this.authService.verifyOtp(verifyOtpDto);
-    const { user, ...other } = result;
+  // @VerifyOtpOperation()
+  // @Post('local/verify-otp')
+  // @HttpCode(HttpStatus.OK)
+  // async verifyOtp(
+  //   @Body(ValidationPipe) verifyOtpDto: VerifyOtpDto,
+  //   @Req() req: Request,
+  // ) {
+  //   const result = await this.authService.verifyOtp(verifyOtpDto);
+  //   const { user, ...other } = result;
 
-    req.session.user = user;
+  //   if (user) {
+  //     const sessionId = req.sessionID;
 
-    return new Promise((resolve, reject) => {
-      req.session.save((err) => {
-        if (err) {
-          throw new UnauthorizedException('session save error');
-        } else {
-          resolve(other);
-        }
-      });
-    });
-  }
+  //     // Prepare user payload for auth service
+  //     const userPayload = {
+  //       ...user,
+  //       sessionId: sessionId,
+  //     };
+
+  //     // Save user payload in auth service
+  //     await this.authService.saveUserPayload(userPayload);
+
+  //     // Set session data
+  //     req.session.user = {
+  //       userId: user.email,
+  //       email: user.email,
+  //       fullName: user.fullName || user.name,
+  //       picture: user.picture || '',
+  //       isVerified: true,
+  //       isAuthenticated: true,
+  //       loginTime: new Date(),
+  //     };
+
+  //     return new Promise((resolve, reject) => {
+  //       req.session.save((err) => {
+  //         if (err) {
+  //           console.error('Session save error:', err);
+  //           reject(new UnauthorizedException('Session save error'));
+  //         } else {
+  //           resolve(other);
+  //         }
+  //       });
+  //     });
+  //   } else {
+  //     throw new UnauthorizedException('Verification failed');
+  //   }
+  // }
 
   // @IsAuthenticated()
   @ProfileOperation()
@@ -165,7 +201,18 @@ export class AuthController {
   @IsAuthenticated()
   @LogoutOperation()
   @Post('logout')
-  logout(@Req() req: Request, @Res() res: Response) {
+  async logout(@Req() req: Request, @Res() res: Response) {
+    const sessionId = req.session.id;
+
+    // Clean up session in auth service
+    try {
+      if (sessionId) {
+        await this.authService.removeUserSession(sessionId);
+      }
+    } catch (error) {
+      console.error('❌ Error removing session from auth service:', error);
+    }
+
     req.session.destroy((err) => {
       if (err) {
         console.error('❌ Session destroy error:', err);

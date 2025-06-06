@@ -49,8 +49,10 @@ export class FileController {
     description: 'unauthorized user',
     type: ErrorResponseDto,
   })
-  @ApiGatewayTimeoutResponse({description:'timeOut file service',type:ErrorResponseDto})
-
+  @ApiGatewayTimeoutResponse({
+    description: 'timeOut file service',
+    type: ErrorResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'bad request', type: ErrorResponseDto })
   @ApiOperation({ summary: 'uploaded file' })
   @ApiBody({ type: UploadFileDto })
@@ -73,7 +75,7 @@ export class FileController {
     const result = await lastValueFrom(
       this.fileClientService.send(PatternNameEnum.UPLOAD_FILE, {
         file,
-        // user: req.user,
+        user: { email: req.session?.user?.email },
       }),
     );
     return {
@@ -91,15 +93,17 @@ export class FileController {
     description: 'unauthorized user',
     type: ErrorResponseDto,
   })
-
-  @ApiGatewayTimeoutResponse({description:'timeOut file service',type:ErrorResponseDto})
+  @ApiGatewayTimeoutResponse({
+    description: 'timeOut file service',
+    type: ErrorResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'bad request', type: ErrorResponseDto })
   @ApiOperation({ summary: 'list of files user' })
   @Get('list')
   async listUserFiles(@Req() req: Request) {
     const result = await lastValueFrom(
       this.fileClientService.send(PatternNameEnum.LIST_FILES, {
-        // user: req.user,
+        user: { email: req.session.user?.email },
       }),
     );
     return {

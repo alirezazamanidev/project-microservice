@@ -1,11 +1,11 @@
 import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
-import { OtpRecord } from '../common/interfaces/auth.interface';
+import { OtpRecord } from '../../common/interfaces/auth.interface';
 import { randomInt } from 'crypto';
 import { RpcException } from '@nestjs/microservices';
-import { AuthErrorCodes } from '../common/enums/error-codes.enum';
-import { createStandardError } from '../common/utils/error.util';
+import { AuthErrorCodes } from '../../common/enums/error-codes.enum';
+import { createStandardError } from '../../common/utils/error.util';
 
 @Injectable()
 export class OtpService {
