@@ -28,7 +28,19 @@ services:
 
     ports:
       - 6379:6379
-
+ postgres:
+    container_name: postgres
+    image: postgres:17.0-alpine3.20
+    restart: 'no'
+    environment:
+      - POSTGRES_PASSWORD=1111
+      - POSTGRES_USER=postgres
+    volumes:
+      - postgres_project_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
 volumes:
   minio_project_data:
+    driver: local
+  postgres_project_data:
     driver: local
