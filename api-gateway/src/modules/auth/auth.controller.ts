@@ -124,26 +124,26 @@ export class AuthController {
   localRegister(@Body(ValidationPipe) localRegisterDto: LocalRegisterDto) {
     return this.authService.localRegister(localRegisterDto);
   }
-  // @VerifyOtpOperation()
-  // @Post('local/verify-otp')
-  // @HttpCode(HttpStatus.OK)
-  // async verifyOtp(
-  //   @Body(ValidationPipe) verifyOtpDto: VerifyOtpDto,
-  //   @Req() req: Request,
-  // ) {
-  //   const result = await this.authService.verifyOtp(
-  //     verifyOtpDto,
-  //     req.sessionID,
-  //   );
-  //   const { user, ...other } = result;
-  //   req.session.user = {
-  //     email: user.email,
-  //     fullname: user.fullname,
-  //   };
-  //   return {
-  //     ...other,
-  //   };
-  // }
+  @VerifyOtpOperation()
+  @Post('local/verify-otp')
+  @HttpCode(HttpStatus.OK)
+  async verifyOtp(
+    @Body() verifyOtpDto: VerifyOtpDto,
+    @Session() session: Record<string, any>,
+  ) {
+    const result = await this.authService.verifyOtp(
+      verifyOtpDto
+    );
+    const { user, ...other } = result;
+    session.user = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    };
+    return {
+      ...other,
+    };
+  }
 
   @IsAuthenticated()
   @ProfileOperation()

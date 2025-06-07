@@ -11,7 +11,6 @@ export interface LocalRegisterDto {
 export interface VerifyOtpDto {
   email: string;
   otp: string;
-  sessionId:string
 }
 
 export interface OtpLoginDto {

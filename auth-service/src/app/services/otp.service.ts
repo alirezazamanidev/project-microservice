@@ -56,7 +56,7 @@ export class OtpService {
   async verifyOtp(
     email: string,
     providedOtp: string,
-  ): Promise<{ valid: boolean; message: string; type?: 'login' | 'register' }> {
+  ): Promise<{ valid: boolean; type?: 'login' | 'register' }> {
     const key = `otp:${email}`;
     const otpRecord: OtpRecord | null = await this.cacheManager.get(key);
 
@@ -114,7 +114,7 @@ export class OtpService {
     await this.cacheManager.del(key);
     this.logger.log(`OTP verified successfully for email: ${email}`);
 
-    return { valid: true, message: 'OTP code is valid', type: otpRecord.type };
+    return { valid: true ,type: otpRecord.type };
   }
 
   async hasValidOtp(email: string): Promise<boolean> {

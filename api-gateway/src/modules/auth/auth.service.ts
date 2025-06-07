@@ -65,9 +65,9 @@ export class AuthService {
     return result;
   }
 
-  async verifyOtp(verifyOtpDto: VerifyOtpDto,sessionId:string) {
+  async verifyOtp(verifyOtpDto: VerifyOtpDto) {
     const result = await lastValueFrom(
-      this.authClient.send(PatternNameEnum.VERIFY_OTP, {...verifyOtpDto,sessionId}),
+      this.authClient.send(PatternNameEnum.VERIFY_OTP, verifyOtpDto),
     );
     return result;
   }
