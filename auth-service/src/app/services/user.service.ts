@@ -19,14 +19,13 @@ export class UserService {
   private readonly logger = new Logger(UserService.name);
 
   constructor(
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+  
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
-  async createOrUpdate(userDto: UserDto,sessionId:string) {
-    
-    // find user
+  async createOrUpdate(userDto: UserDto) {
+
     let user = await this.userRepository.findOne({
       where: {
         email: userDto.email,
@@ -34,16 +33,15 @@ export class UserService {
     });
     
     if (!user) {
-      user = this.userRepository.create({...userDto,sessionId,verifyEmail:true});
+      user = this.userRepository.create({...userDto,verifyEmail:true});
     } else {
-      user.sessionId = sessionId;
       if(!user.verifyEmail) user.verifyEmail=true
     }
     await this.userRepository.save(user);
     return user;
   }
 
-  async createUser(userDto:UserDto,sessionId:string){
+  async createUser(userDto:UserDto){
     let  user=await this.getByEmail(userDto.email);
     if(user) throw new RpcException(
       createStandardError(
@@ -53,7 +51,7 @@ export class UserService {
         { email: userDto.email },
       )
     )
-    user=this.userRepository.create({...userDto,verifyEmail:true,sessionId});
+    user=this.userRepository.create({...userDto,verifyEmail:true});
     await this.userRepository.save(user);
     return user;
   }
@@ -63,20 +61,7 @@ export class UserService {
      return this.userRepository.findOne({where:{email}});
   }
 
-  async updateUserSession(email:string,sessionId:string):Promise<UserEntity>{
-    const user=await this.getByEmail(email);
-    if(!user) throw new RpcException(
-      createStandardError(
-        HttpStatus.NOT_FOUND,
-        AuthErrorCodes.ACCOUNT_NOT_FOUND,
-        undefined,
-        { email },
-      )
-    )
-    user.sessionId=sessionId;
-    await this.userRepository.save(user);
-    return user;
-  }
+ 
  
 
 

@@ -40,7 +40,6 @@ export interface EmailLoginResponse {
 export interface UserDto {
   email: string;
   fullname: string;
-  
   picture?: string;
 }
 

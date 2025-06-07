@@ -14,10 +14,6 @@ export class UserEntity {
   id: string;
   @Index()
   @Column({ unique: true })
-  sessionId: string;
-
-  @Index()
-  @Column({ unique: true })
   email: string;
   @Column({})
   fullname: string;

@@ -26,9 +26,9 @@ export interface EmailLoginResponse {
 export class AuthService {
   constructor(@InjectAuthClient() private readonly authClient: ClientProxy) {}
 
-  async googleCallback(code: string,sessionId:string) {
+  async googleCallback(code: string) {
     const result = await lastValueFrom(
-      this.authClient.send(PatternNameEnum.GOOGLE_LOGIN, { code ,sessionId}),
+      this.authClient.send(PatternNameEnum.GOOGLE_LOGIN, { code}),
     );
 
     return result;

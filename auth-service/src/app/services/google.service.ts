@@ -6,66 +6,27 @@ import { UserService } from './user.service';
 import { AuthErrorCodes } from '../../common/enums/error-codes.enum';
 import { createStandardError } from '../../common/utils/error.util';
 
-// Types
-interface GoogleTokenResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  refresh_token?: string;
-}
-
-interface GoogleUserProfile {
-  email: string;
-  name: string;
-  picture: string;
-  id: string;
-  verified_email: boolean;
-}
-
-export interface GoogleUserInfo {
-  email: string;
-  fullname: string;
-  picture: string;
-}
-
 @Injectable()
 export class GoogleService {
   private readonly logger = new Logger(GoogleService.name);
-
-  // Constants
-  private readonly GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
-  private readonly GOOGLE_USERINFO_URL =
-    'https://www.googleapis.com/oauth2/v1/userinfo';
-
   constructor(
     private readonly httpService: HttpService,
     private readonly userService: UserService,
-  ) {
-    this.validateConfiguration();
-  }
+  ) {}
 
   /**
    * Handle Google OAuth login process
    */
-  async googleLogin(code: string,sessionId:string): Promise<GoogleUserInfo> {
-    try {
-      this.logger.log('Starting Google OAuth login process');
-
-      const accessToken = await this.exchangeCodeForToken(code);
-      const userProfile = await this.fetchUserProfile(accessToken);
-    
-     const user=await this.userService.createOrUpdate({fullname:userProfile.name,email:userProfile.email},sessionId)
-      return this.transformUserProfile(userProfile);
-    } catch (error) {
-      throw new RpcException(
-        createStandardError(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          AuthErrorCodes.INTERNAL_SERVER_ERROR,
-
-          // { originalError: error.message },
-        ),
-      );
-    }
+  async googleLogin(code: string) {
+    const accessToken = await this.exchangeCodeForToken(code);
+    const userProfile = await this.fetchUserProfile(accessToken);
+    const user = await this.userService.createOrUpdate({
+      email: userProfile.email,
+      picture: userProfile.picture,
+      fullname: userProfile.name,
+    });
+    this.logger.log(`User ${user.email}  logged in successfully`);
+    return user;
   }
 
   /**
@@ -81,34 +42,27 @@ export class GoogleService {
     };
 
     const { data } = await lastValueFrom(
-      this.httpService
-        .post<GoogleTokenResponse>(this.GOOGLE_TOKEN_URL, tokenPayload)
-        .pipe(
-          catchError((error) => {
-            throw new RpcException(
-              createStandardError(
-                HttpStatus.UNAUTHORIZED,
-                AuthErrorCodes.GOOGLE_AUTH_ERROR,
-                'Failed to exchange authorization code for token',
-                { code, originalError: error.message },
-              ),
-            );
-          }),
-        ),
+      this.httpService.post(process.env.GOOGLE_TOKEN_URL, tokenPayload).pipe(
+        catchError((error) => {
+          throw new RpcException(
+            createStandardError(
+              HttpStatus.UNAUTHORIZED,
+              AuthErrorCodes.GOOGLE_AUTH_ERROR,
+              'Failed to exchange authorization code for token',
+              { code, originalError: error.message },
+            ),
+          );
+        }),
+      ),
     );
 
-    return data.access_token;
+    return data?.access_token;
   }
 
-  /**
-   * Fetch user profile from Google
-   */
-  private async fetchUserProfile(
-    accessToken: string,
-  ): Promise<GoogleUserProfile> {
+  private async fetchUserProfile(accessToken: string) {
     const { data } = await lastValueFrom(
       this.httpService
-        .get<GoogleUserProfile>(this.GOOGLE_USERINFO_URL, {
+        .get(process.env.GOOGLE_USERINFO_URL, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -129,37 +83,5 @@ export class GoogleService {
     );
 
     return data;
-  }
-
-  /**
-   * Transform Google user profile to our user info format
-   */
-  private transformUserProfile(profile: GoogleUserProfile): GoogleUserInfo {
-    return {
-      email: profile.email,
-      fullname: profile.name,
-      picture: profile.picture,
-    };
-  }
-
-  /**
-   * Validate required environment configuration
-   */
-  private validateConfiguration(): void {
-    const requiredEnvVars = [
-      'GOOGLE_CLIENT_ID',
-      'GOOGLE_CLIENT_SECRET',
-      'GOOGLE_CALLBACK_URL',
-    ];
-
-    const missingVars = requiredEnvVars.filter(
-      (varName) => !process.env[varName],
-    );
-
-    if (missingVars.length > 0) {
-      const errorMessage = `Missing required environment variables: ${missingVars.join(', ')}`;
-      this.logger.error(errorMessage);
-      throw new Error(errorMessage);
-    }
   }
 }

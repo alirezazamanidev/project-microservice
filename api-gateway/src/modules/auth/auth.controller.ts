@@ -46,17 +46,20 @@ export class AuthController {
 
   @GoogleCallbackOperation()
   @Get('google/callback')
-  async googleAuthRedirect(@Query('code') code: string, @Req() req: Request,@Res() res:Response) {
-    const result = await this.authService.googleCallback(code, req.sessionID);
+  async googleAuthRedirect(
+    @Query('code') code: string,
+    @Session() session: Record<string, any>,
+    @Res() res: Response,
+  ) {
+    const result = await this.authService.googleCallback(code);
     if (result) {
-      // Save session data
-      req.session.user = {
+      session.user = {
+        id: result.id,
+        role: result.role,
         email: result.email,
-        fullname: result.fullname,
       };
-      // redir
-      res.redirect('http://localhost:3000');
     }
+    res.redirect('http://localhost:3000');
   }
 
   @AppleAuthOperation()

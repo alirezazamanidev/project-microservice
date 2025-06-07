@@ -13,8 +13,8 @@ export class GoogleController {
   ) {}
 
   @MessagePattern(PatternNameEnum.GOOGLE_LOGIN)
-  async googleLogin(@Payload() { code,sessionId }: { code: string,sessionId:string }) {
-    return this.googleService.googleLogin(code,sessionId);
+  async googleLogin(@Payload() { code }: { code: string }) {
+    return this.googleService.googleLogin(code);
   }
  
 }

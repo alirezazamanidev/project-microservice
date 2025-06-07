@@ -195,7 +195,7 @@ export class LocalService {
         } as UserDto;
 
         // Move user data from temporary storage to permanent storage
-        const user = await this.userService.createUser(verifiedUserData,sessionId);
+        const user = await this.userService.createUser(verifiedUserData);
 
         // Clean up temporary data
         await this.cacheManager.del(tempUserKey);
@@ -214,9 +214,9 @@ export class LocalService {
       // Handle login verification
       if (verification.valid && verification.type === 'login') {
         this.logger.log(`User login verified successfully for email: ${email}`);
-        const user = await this.userService.updateUserSession(email,sessionId);
+    
         return {
-          user,
+        
           success: true,
           message: 'Login successful',
         };
