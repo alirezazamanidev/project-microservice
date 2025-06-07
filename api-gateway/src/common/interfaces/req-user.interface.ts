@@ -1,8 +1,7 @@
 export interface IUser {
-  userId: string;
+  id: string;
   email: string;
-  fullName?: string;
-  picture?: string;
-  isVerified: boolean;
-  sessionId?: string;
+  fullname?: string;
+  verifyEmail: boolean;
+  created_at: Date;
 }

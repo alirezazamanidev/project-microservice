@@ -61,6 +61,25 @@ export class UserService {
      return this.userRepository.findOne({where:{email}});
   }
 
+  async getUserInfo(userId: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'email', 'fullname','verifyEmail','created_at'],
+    });
+
+    if (!user) {
+      throw new RpcException(
+        createStandardError(
+          HttpStatus.NOT_FOUND,
+          AuthErrorCodes.ACCOUNT_NOT_FOUND,
+          undefined,
+          { userId },
+        )
+      );
+    }
+
+    return user;
+  }
  
  
 

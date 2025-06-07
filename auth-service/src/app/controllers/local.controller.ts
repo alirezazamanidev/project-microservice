@@ -32,6 +32,10 @@ export class LocalController {
   async verifyOtp(@Payload() verifyOtpDto: VerifyOtpDto) {
     return this.localService.verifyOtp(verifyOtpDto);
   }
+  @MessagePattern(PatternNameEnum.GET_USER_INFO)
+  async getUserInfo(@Payload() payload: { userId: string }) {
+    return this.userService.getUserInfo(payload.userId);
+  }
 
   
 }

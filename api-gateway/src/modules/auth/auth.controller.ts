@@ -124,67 +124,37 @@ export class AuthController {
   localRegister(@Body(ValidationPipe) localRegisterDto: LocalRegisterDto) {
     return this.authService.localRegister(localRegisterDto);
   }
-  @VerifyOtpOperation()
-  @Post('local/verify-otp')
-  @HttpCode(HttpStatus.OK)
-  async verifyOtp(
-    @Body(ValidationPipe) verifyOtpDto: VerifyOtpDto,
-    @Req() req: Request,
-  ) {
-    const result = await this.authService.verifyOtp(
-      verifyOtpDto,
-      req.sessionID,
-    );
-    const { user, ...other } = result;
-    req.session.user = {
-      email: user.email,
-      fullname: user.fullname,
-    };
-    return {
-      ...other,
-    };
-  }
+  // @VerifyOtpOperation()
+  // @Post('local/verify-otp')
+  // @HttpCode(HttpStatus.OK)
+  // async verifyOtp(
+  //   @Body(ValidationPipe) verifyOtpDto: VerifyOtpDto,
+  //   @Req() req: Request,
+  // ) {
+  //   const result = await this.authService.verifyOtp(
+  //     verifyOtpDto,
+  //     req.sessionID,
+  //   );
+  //   const { user, ...other } = result;
+  //   req.session.user = {
+  //     email: user.email,
+  //     fullname: user.fullname,
+  //   };
+  //   return {
+  //     ...other,
+  //   };
+  // }
 
-  // @IsAuthenticated()
+  @IsAuthenticated()
   @ProfileOperation()
   @Get('profile')
   getProfile(@Req() req: Request) {
     return {
       success: true,
       message: 'Profile retrieved successfully',
-      user: req.session.user,
+      user: req.user,
     };
   }
 
-  @IsAuthenticated()
-  @LogoutOperation()
-  @Post('logout')
-  async logout(@Req() req: Request, @Res() res: Response) {
-    const sessionId = req.session.id;
-
-    // Clean up session in auth service
-    try {
-      if (sessionId) {
-        await this.authService.removeUserSession(sessionId);
-      }
-    } catch (error) {
-      console.error('❌ Error removing session from auth service:', error);
-    }
-
-    req.session.destroy((err) => {
-      if (err) {
-        console.error('❌ Session destroy error:', err);
-        return res.status(500).json({
-          success: false,
-          message: 'Failed to logout',
-        });
-      }
-
-      res.clearCookie('sessionId');
-      return res.json({
-        success: true,
-        message: 'Logged out successfully',
-      });
-    });
-  }
+  
 }
