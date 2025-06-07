@@ -1,8 +1,15 @@
 import { RoleEnum } from 'src/common/enums/role..emum';
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 
 @Entity('user')
-export class UserEntity  {
+export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
   @Index()
@@ -16,8 +23,8 @@ export class UserEntity  {
   fullname: string;
   @Column({ default: false })
   verifyEmail: boolean;
-  @Column({type:'enum', enum:RoleEnum,default:RoleEnum.User})
-  role:string
+  @Column({ type: 'enum', enum: RoleEnum, default: RoleEnum.User })
+  role: string;
   @CreateDateColumn()
   created_at: Date;
 

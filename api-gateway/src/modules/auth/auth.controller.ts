@@ -25,12 +25,11 @@ import {
   GoogleAuthOperation,
   GoogleCallbackOperation,
   AppleAuthOperation,
-  AppleCallbackOperation,
-  VerifyOtpOperation,
   ProfileOperation,
   LogoutOperation,
   LocalLoginOperation,
   LocalRegisterOperation,
+  VerifyOtpOperation,
 } from './decorators/auth-swagger.decorators';
 
 @ApiTags('Auth')
@@ -38,7 +37,7 @@ import {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // @GoogleAuthOperation()
+  @GoogleAuthOperation()
   @Get('google/login')
   googleAuth(@Res() res: Response) {
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.GOOGLE_CALLBACK_URL}&response_type=code&scope=profile email`;
@@ -47,33 +46,16 @@ export class AuthController {
 
   @GoogleCallbackOperation()
   @Get('google/callback')
-  async googleAuthRedirect(@Query('code') code: string, @Req() req: Request) {
-    const result = await this.authService.googleCallback(code);
+  async googleAuthRedirect(@Query('code') code: string, @Req() req: Request,@Res() res:Response) {
+    const result = await this.authService.googleCallback(code, req.sessionID);
     if (result) {
       // Save session data
       req.session.user = {
         email: result.email,
         fullname: result.fullname,
-        picture: result.picture,
       };
-
-      req.session.save(async (err) => {
-        if (err) {
-          throw new UnauthorizedException('login again');
-        }
-      });
-      const user = await this.authService.saveOrUpdateUser({
-        sessionId: req.sessionID,
-        email: result.email,
-        fullname: result.fullname,
-        picture: result?.picture || '',
-      });
-
-      return {
-        user,
-        message: 'login success',
-      };
-      // return res.redirect('http://localhost:3000/');
+      // redir
+      res.redirect('http://localhost:3000');
     }
   }
 
@@ -139,53 +121,26 @@ export class AuthController {
   localRegister(@Body(ValidationPipe) localRegisterDto: LocalRegisterDto) {
     return this.authService.localRegister(localRegisterDto);
   }
-  // @VerifyOtpOperation()
-  // @Post('local/verify-otp')
-  // @HttpCode(HttpStatus.OK)
-  // async verifyOtp(
-  //   @Body(ValidationPipe) verifyOtpDto: VerifyOtpDto,
-  //   @Req() req: Request,
-  // ) {
-  //   const result = await this.authService.verifyOtp(verifyOtpDto);
-  //   const { user, ...other } = result;
-
-  //   if (user) {
-  //     const sessionId = req.sessionID;
-
-  //     // Prepare user payload for auth service
-  //     const userPayload = {
-  //       ...user,
-  //       sessionId: sessionId,
-  //     };
-
-  //     // Save user payload in auth service
-  //     await this.authService.saveUserPayload(userPayload);
-
-  //     // Set session data
-  //     req.session.user = {
-  //       userId: user.email,
-  //       email: user.email,
-  //       fullName: user.fullName || user.name,
-  //       picture: user.picture || '',
-  //       isVerified: true,
-  //       isAuthenticated: true,
-  //       loginTime: new Date(),
-  //     };
-
-  //     return new Promise((resolve, reject) => {
-  //       req.session.save((err) => {
-  //         if (err) {
-  //           console.error('Session save error:', err);
-  //           reject(new UnauthorizedException('Session save error'));
-  //         } else {
-  //           resolve(other);
-  //         }
-  //       });
-  //     });
-  //   } else {
-  //     throw new UnauthorizedException('Verification failed');
-  //   }
-  // }
+  @VerifyOtpOperation()
+  @Post('local/verify-otp')
+  @HttpCode(HttpStatus.OK)
+  async verifyOtp(
+    @Body(ValidationPipe) verifyOtpDto: VerifyOtpDto,
+    @Req() req: Request,
+  ) {
+    const result = await this.authService.verifyOtp(
+      verifyOtpDto,
+      req.sessionID,
+    );
+    const { user, ...other } = result;
+    req.session.user = {
+      email: user.email,
+      fullname: user.fullname,
+    };
+    return {
+      ...other,
+    };
+  }
 
   // @IsAuthenticated()
   @ProfileOperation()

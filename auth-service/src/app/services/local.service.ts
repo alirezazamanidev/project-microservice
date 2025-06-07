@@ -7,7 +7,7 @@ import { MailerService } from './mailer.service';
 import {
   LocalLoginDto,
   LocalRegisterDto,
-  UserPayload,
+  UserDto,
   VerifyOtpDto,
 } from 'src/common/interfaces/auth.interface';
 import { UserService } from './user.service';
@@ -26,30 +26,16 @@ export class LocalService {
 
   async localLogin({ email }: LocalLoginDto) {
     try {
-      const userPayload = await this.userService.getUserPayload(email);
-      if (!userPayload) {
-        throw new RpcException(
-          createStandardError(
-            HttpStatus.NOT_FOUND,
-            AuthErrorCodes.ACCOUNT_NOT_FOUND,
-            undefined,
-            { email },
-          ),
-        );
-      }
+      const user = await this.userService.getByEmail(email);
 
-      // Check if user is verified
-      if (!userPayload.isVerified) {
-        throw new RpcException(
-          createStandardError(
-            HttpStatus.FORBIDDEN,
-            AuthErrorCodes.ACCOUNT_NOT_VERIFIED,
-            undefined,
-            { email },
-          ),
-        );
-      }
-
+      if(!user) throw new RpcException(
+        createStandardError(
+          HttpStatus.NOT_FOUND,
+          AuthErrorCodes.ACCOUNT_NOT_FOUND,
+          undefined,
+          { email },
+        )
+      ) 
       // Check if there's already a valid OTP for this email
       const hasValidOtp = await this.otpService.hasValidOtp(email);
 
@@ -107,8 +93,8 @@ export class LocalService {
 
   async localRegister({ email, fullname }: LocalRegisterDto) {
     try {
-      const userPayload = await this.userService.getUserPayload(email);
-      if (userPayload) {
+      const user = await this.userService.getByEmail(email);
+      if (user) {
         throw new RpcException(
           createStandardError(
             HttpStatus.CONFLICT,
@@ -135,12 +121,9 @@ export class LocalService {
 
       // Store user data temporarily in Redis (will be moved to permanent storage after OTP verification)
       const tempUserKey = `temp_user:${email}`;
-      const tempUserData: UserPayload = {
+      const tempUserData: Partial<UserDto> = {
         email,
-        fullName: fullname,
-        verifyEmail: false,
-        isVerified: false,
-        registeredAt: new Date(),
+        fullname,
       };
       await this.cacheManager.set(tempUserKey, tempUserData, 5 * 60 * 1000); // 5 minutes TTL
 
@@ -183,7 +166,7 @@ export class LocalService {
     }
   }
 
-  async verifyOtp({ email, otp }: VerifyOtpDto) {
+  async verifyOtp({ email, otp,sessionId }: VerifyOtpDto) {
     try {
       const verification = await this.otpService.verifyOtp(email, otp);
 
@@ -192,7 +175,7 @@ export class LocalService {
         const tempUserKey = `temp_user:${email}`;
         const tempUserData = (await this.cacheManager.get(
           tempUserKey,
-        )) as UserPayload;
+        ))
 
         if (!tempUserData) {
           throw new RpcException(
@@ -208,11 +191,11 @@ export class LocalService {
         // Mark user as verified and save to permanent storage
         const verifiedUserData = {
           ...tempUserData,
-          isVerified: true,
-        };
+        
+        } as UserDto;
 
         // Move user data from temporary storage to permanent storage
-        const user = await this.userService.saveUserPayload(verifiedUserData);
+        const user = await this.userService.createUser(verifiedUserData,sessionId);
 
         // Clean up temporary data
         await this.cacheManager.del(tempUserKey);
@@ -231,7 +214,7 @@ export class LocalService {
       // Handle login verification
       if (verification.valid && verification.type === 'login') {
         this.logger.log(`User login verified successfully for email: ${email}`);
-        const user = await this.userService.getUserPayload(email);
+        const user = await this.userService.updateUserSession(email,sessionId);
         return {
           user,
           success: true,

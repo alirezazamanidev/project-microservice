@@ -4,6 +4,7 @@ import { InjectAuthClient } from '../../common/decorators/inject-client.decorato
 import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { PatternNameEnum } from 'src/common/enums/pattern.enum';
 import { VerifyOtpDto, LocalLoginDto, LocalRegisterDto } from './dto/auth.dto';
+import { Session } from 'express-session';
 
 export interface UserPayload {
   email: string;
@@ -25,9 +26,9 @@ export interface EmailLoginResponse {
 export class AuthService {
   constructor(@InjectAuthClient() private readonly authClient: ClientProxy) {}
 
-  async googleCallback(code: string) {
+  async googleCallback(code: string,sessionId:string) {
     const result = await lastValueFrom(
-      this.authClient.send(PatternNameEnum.GOOGLE_LOGIN, { code }),
+      this.authClient.send(PatternNameEnum.GOOGLE_LOGIN, { code ,sessionId}),
     );
 
     return result;
@@ -50,8 +51,9 @@ export class AuthService {
  }
   // Email OTP Authentication Methods
   async localLogin(localLoginDto: LocalLoginDto) {
+
     const result = await lastValueFrom(
-      this.authClient.send(PatternNameEnum.LOCAL_LOGIN, localLoginDto),
+      this.authClient.send(PatternNameEnum.LOCAL_LOGIN,localLoginDto),
     );
     return result;
   }
@@ -63,9 +65,9 @@ export class AuthService {
     return result;
   }
 
-  async verifyOtp(verifyOtpDto: VerifyOtpDto) {
+  async verifyOtp(verifyOtpDto: VerifyOtpDto,sessionId:string) {
     const result = await lastValueFrom(
-      this.authClient.send(PatternNameEnum.VERIFY_OTP, verifyOtpDto),
+      this.authClient.send(PatternNameEnum.VERIFY_OTP, {...verifyOtpDto,sessionId}),
     );
     return result;
   }

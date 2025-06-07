@@ -33,18 +33,5 @@ export class LocalController {
     return this.localService.verifyOtp(verifyOtpDto);
   }
 
-  @MessagePattern(PatternNameEnum.SAVE_USER_PAYLOAD)
-  async saveUserPayload(@Payload() payload: any) {
-    return this.userService.saveUserPayload(payload);
-  }
-
-  @MessagePattern(PatternNameEnum.GET_USER_INFO)
-  async getUserInfo(@Payload() data: { sessionId?: string; email?: string }) {
-    return this.userService.getUserInfo(data);
-  }
-
-  @MessagePattern(PatternNameEnum.REMOVE_SESSION)
-  async removeSession(@Payload() data: { sessionId: string }) {
-    return this.userService.removeUserSession(data.sessionId);
-  }
+  
 }

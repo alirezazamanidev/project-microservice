@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Cache } from 'cache-manager';
 import {
   UserDto,
-  UserPayload,
+  
   UserInfo,
 } from 'src/common/interfaces/auth.interface';
 import { Repository } from 'typeorm';
@@ -24,7 +24,7 @@ export class UserService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
-  async createOrUpdate(userDto: UserDto) {
+  async createOrUpdate(userDto: UserDto,sessionId:string) {
     
     // find user
     let user = await this.userRepository.findOne({
@@ -32,157 +32,52 @@ export class UserService {
         email: userDto.email,
       },
     });
+    
     if (!user) {
-      user = this.userRepository.create({...userDto,verifyEmail:true});
+      user = this.userRepository.create({...userDto,sessionId,verifyEmail:true});
     } else {
-      user.sessionId = user.sessionId
+      user.sessionId = sessionId;
       if(!user.verifyEmail) user.verifyEmail=true
     }
     await this.userRepository.save(user);
     return user;
   }
 
-  async saveUserPayload(payload: UserPayload) {
-    const key = `user:${payload.email}`;
-    const sessionKey = `session:${payload.sessionId}`;
-
-    // Save user payload
-    await this.cacheManager.set(key, payload, 0); // 0 means no expiration (forever)
-
-    // Link session to user email for quick lookup
-    if (payload.sessionId) {
-      await this.cacheManager.set(
-        sessionKey,
-        { email: payload.email },
-        7 * 24 * 60 * 60 * 1000,
-      ); // 7 days
-    }
-
-    this.logger.log(`User payload saved for email: ${payload.email}`);
-    return payload;
+  async createUser(userDto:UserDto,sessionId:string){
+    let  user=await this.getByEmail(userDto.email);
+    if(user) throw new RpcException(
+      createStandardError(
+        HttpStatus.CONFLICT,
+        AuthErrorCodes.USER_ALREADY_EXISTS,
+        undefined,
+        { email: userDto.email },
+      )
+    )
+    user=this.userRepository.create({...userDto,verifyEmail:true,sessionId});
+    await this.userRepository.save(user);
+    return user;
   }
 
-  async getUserPayload(email: string): Promise<UserPayload | null> {
-    const key = `user:${email}`;
-    const payload = await this.cacheManager.get<UserPayload | null>(key);
-    return payload;
+  
+  async getByEmail(email:string){
+     return this.userRepository.findOne({where:{email}});
   }
 
-  async getUserInfo(data: {
-    sessionId?: string;
-    email?: string;
-  }): Promise<UserInfo> {
-    try {
-      let userEmail = data.email;
-
-      // If we have sessionId but no email, look up email by session
-      if (data.sessionId && !userEmail) {
-        const sessionKey = `session:${data.sessionId}`;
-        const sessionData = await this.cacheManager.get<{ email: string }>(
-          sessionKey,
-        );
-
-        if (!sessionData) {
-          throw new RpcException(
-            createStandardError(
-              HttpStatus.UNAUTHORIZED,
-              AuthErrorCodes.UNAUTHORIZED,
-              'Session not found or expired',
-              { sessionId: data.sessionId },
-            ),
-          );
-        }
-
-        userEmail = sessionData.email;
-      }
-
-      if (!userEmail) {
-        throw new RpcException(
-          createStandardError(
-            HttpStatus.BAD_REQUEST,
-            AuthErrorCodes.MISSING_REQUIRED_FIELD,
-            'Email or sessionId is required',
-            data,
-          ),
-        );
-      }
-
-      // Get user payload
-      const userPayload = await this.getUserPayload(userEmail);
-
-      if (!userPayload) {
-        throw new RpcException(
-          createStandardError(
-            HttpStatus.NOT_FOUND,
-            AuthErrorCodes.ACCOUNT_NOT_FOUND,
-            'User not found',
-            { email: userEmail },
-          ),
-        );
-      }
-
-      // Return user info without sensitive data
-      return {
-        userId: userPayload.email, // Using email as userId for now
-        email: userPayload.email,
-        fullName: userPayload.fullName || userPayload.name,
-        picture: userPayload.picture || '',
-        isVerified: userPayload.verifyEmail || userPayload.isVerified || false,
-        sessionId: data.sessionId,
-      };
-    } catch (error) {
-      if (error instanceof RpcException) {
-        throw error;
-      }
-
-      this.logger.error('Error getting user info:', error);
-      throw new RpcException(
-        createStandardError(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          AuthErrorCodes.INTERNAL_SERVER_ERROR,
-          'Failed to get user information',
-          { originalError: error.message },
-        ),
-      );
-    }
-  }
-
-  async updateUserSession(email: string, sessionId: string) {
-    try {
-      // Update session mapping
-      const sessionKey = `session:${sessionId}`;
-      await this.cacheManager.set(
-        sessionKey,
+  async updateUserSession(email:string,sessionId:string):Promise<UserEntity>{
+    const user=await this.getByEmail(email);
+    if(!user) throw new RpcException(
+      createStandardError(
+        HttpStatus.NOT_FOUND,
+        AuthErrorCodes.ACCOUNT_NOT_FOUND,
+        undefined,
         { email },
-        7 * 24 * 60 * 60 * 1000,
-      ); // 7 days
-
-      // Update user payload with session info
-      const userPayload = await this.getUserPayload(email);
-      if (userPayload) {
-        const updatedPayload = { ...userPayload, sessionId };
-        await this.saveUserPayload(updatedPayload);
-      }
-
-      this.logger.log(
-        `Session updated for email: ${email}, sessionId: ${sessionId}`,
-      );
-      return true;
-    } catch (error) {
-      this.logger.error(`Error updating session for ${email}:`, error);
-      throw error;
-    }
+      )
+    )
+    user.sessionId=sessionId;
+    await this.userRepository.save(user);
+    return user;
   }
+ 
 
-  async removeUserSession(sessionId: string) {
-    try {
-      const sessionKey = `session:${sessionId}`;
-      await this.cacheManager.del(sessionKey);
-      this.logger.log(`Session removed: ${sessionId}`);
-      return true;
-    } catch (error) {
-      this.logger.error(`Error removing session ${sessionId}:`, error);
-      throw error;
-    }
-  }
+
 }

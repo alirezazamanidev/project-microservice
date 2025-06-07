@@ -47,13 +47,14 @@ export class GoogleService {
   /**
    * Handle Google OAuth login process
    */
-  async googleLogin(code: string): Promise<GoogleUserInfo> {
+  async googleLogin(code: string,sessionId:string): Promise<GoogleUserInfo> {
     try {
       this.logger.log('Starting Google OAuth login process');
 
       const accessToken = await this.exchangeCodeForToken(code);
       const userProfile = await this.fetchUserProfile(accessToken);
-
+    
+     const user=await this.userService.createOrUpdate({fullname:userProfile.name,email:userProfile.email},sessionId)
       return this.transformUserProfile(userProfile);
     } catch (error) {
       throw new RpcException(

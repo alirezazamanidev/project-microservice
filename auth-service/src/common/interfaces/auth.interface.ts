@@ -1,5 +1,6 @@
 export interface LocalLoginDto {
   email: string;
+ 
 }
 
 export interface LocalRegisterDto {
@@ -10,6 +11,7 @@ export interface LocalRegisterDto {
 export interface VerifyOtpDto {
   email: string;
   otp: string;
+  sessionId:string
 }
 
 export interface OtpLoginDto {
@@ -37,24 +39,12 @@ export interface EmailLoginResponse {
 
 export interface UserDto {
   email: string;
-  fullName: string;
-  sessionId: string;
+  fullname: string;
+  
   picture?: string;
 }
 
-// Extended interfaces for session management
-export interface UserPayload {
-  email: string;
-  fullName?: string;
-  name?: string; // For compatibility with Google/Apple auth
-  verifyEmail?: boolean;
-  isVerified?: boolean; // For local auth after OTP verification
-  picture?: string;
-  sessionId?: string;
-  created_at?: Date;
-  updated_at?: Date;
-  registeredAt?: Date;
-}
+
 
 export interface UserInfo {
   userId: string;

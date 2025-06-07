@@ -9,15 +9,12 @@ import { UserService } from 'src/app/services/user.service';
 export class GoogleController {
   constructor(
     private readonly googleService: GoogleService,
-    private readonly userService: UserService,
+    
   ) {}
 
   @MessagePattern(PatternNameEnum.GOOGLE_LOGIN)
-  async googleLogin(@Payload() { code }: { code: string }) {
-    return this.googleService.googleLogin(code);
+  async googleLogin(@Payload() { code,sessionId }: { code: string,sessionId:string }) {
+    return this.googleService.googleLogin(code,sessionId);
   }
-  @MessagePattern(PatternNameEnum.CREATE_OR_UPDATE_USER)
-  async createOrUpdateUser(@Payload() userDto: UserDto) {
-    return this.userService.createOrUpdate(userDto);
-  }
+ 
 }
