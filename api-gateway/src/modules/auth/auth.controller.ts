@@ -131,9 +131,7 @@ export class AuthController {
     @Body() verifyOtpDto: VerifyOtpDto,
     @Session() session: Record<string, any>,
   ) {
-    const result = await this.authService.verifyOtp(
-      verifyOtpDto
-    );
+    const result = await this.authService.verifyOtp(verifyOtpDto);
     const { user, ...other } = result;
     session.user = {
       id: user.id,
@@ -156,5 +154,26 @@ export class AuthController {
     };
   }
 
+  @IsAuthenticated()
+  @LogoutOperation()
+  @Get('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Req() req: Request, @Res() res: Response) {
+      // Destroy the session
+       req.session.destroy((err) => {
+        if (err) {
+           
+          res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: 'Logout failed',
+          });
+        }
   
+        res.clearCookie('connect.sid'); 
+        res.status(HttpStatus.OK).json({
+          success: true,
+          message: 'Logged out successfully',
+        });
+      });
+  }
 }

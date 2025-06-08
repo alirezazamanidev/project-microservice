@@ -28,7 +28,7 @@ export class AuthService {
 
   async googleCallback(code: string) {
     const result = await lastValueFrom(
-      this.authClient.send(PatternNameEnum.GOOGLE_LOGIN, { code}),
+      this.authClient.send(PatternNameEnum.GOOGLE_LOGIN, { code }),
     );
 
     return result;
@@ -42,18 +42,21 @@ export class AuthService {
     return result;
   }
 
- async  saveOrUpdateUser(userDto:{sessionId:string,email:string,fullname:string,picture:string}){
-
-  // const result=await lastValueFrom(
-  //   // this.authClient.send(PatternNameEnum.CREATE_OR_UPDATE_USER,userDto)
-  // )
-  // return result
- }
+  async saveOrUpdateUser(userDto: {
+    sessionId: string;
+    email: string;
+    fullname: string;
+    picture: string;
+  }) {
+    // const result=await lastValueFrom(
+    //   // this.authClient.send(PatternNameEnum.CREATE_OR_UPDATE_USER,userDto)
+    // )
+    // return result
+  }
   // Email OTP Authentication Methods
   async localLogin(localLoginDto: LocalLoginDto) {
-
     const result = await lastValueFrom(
-      this.authClient.send(PatternNameEnum.LOCAL_LOGIN,localLoginDto),
+      this.authClient.send(PatternNameEnum.LOCAL_LOGIN, localLoginDto),
     );
     return result;
   }
@@ -72,5 +75,10 @@ export class AuthService {
     return result;
   }
 
- 
+  async logout(userId: string) {
+    const result = await lastValueFrom(
+      this.authClient.send(PatternNameEnum.LOGOUT, { userId }),
+    );
+    return result;
+  }
 }

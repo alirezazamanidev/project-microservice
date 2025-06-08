@@ -1,6 +1,5 @@
 export interface LocalLoginDto {
   email: string;
- 
 }
 
 export interface LocalRegisterDto {
@@ -11,6 +10,10 @@ export interface LocalRegisterDto {
 export interface VerifyOtpDto {
   email: string;
   otp: string;
+}
+
+export interface LogoutDto {
+  userId: string;
 }
 
 export interface OtpLoginDto {
@@ -41,8 +44,6 @@ export interface UserDto {
   fullname: string;
   picture?: string;
 }
-
-
 
 export interface UserInfo {
   userId: string;

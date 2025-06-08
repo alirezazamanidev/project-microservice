@@ -4,6 +4,7 @@ export enum PatternNameEnum {
   APPLE_LOGIN = 'auth/apple-login',
   SAVE_USER_PAYLOAD = 'auth/save-user-payload',
   GET_USER_INFO = 'auth/get-user-info',
+  LOGOUT = 'auth/logout',
 
   // Email OTP Authentication
   LOCAL_LOGIN = 'auth/local-login',

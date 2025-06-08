@@ -37,5 +37,4 @@ export class LocalController {
     return this.userService.getUserInfo(payload.userId);
   }
 
-  
 }

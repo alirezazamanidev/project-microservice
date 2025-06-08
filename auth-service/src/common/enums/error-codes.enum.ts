@@ -38,6 +38,7 @@ export enum AuthErrorCodes {
   SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
   DATABASE_ERROR = 'DATABASE_ERROR',
   CACHE_ERROR = 'CACHE_ERROR',
+  LOGOUT_ERROR = 'LOGOUT_ERROR',
 
   // Google Auth Errors
   GOOGLE_AUTH_ERROR = 'GOOGLE_AUTH_ERROR',
@@ -93,6 +94,7 @@ export enum AuthErrorMessages {
   SERVICE_UNAVAILABLE = 'Service is temporarily unavailable. Please try again later.',
   DATABASE_ERROR = 'Database error occurred. Please try again later.',
   CACHE_ERROR = 'Cache error occurred. Please try again later.',
+  LOGOUT_ERROR = 'Failed to logout. Please try again.',
 
   // Google Auth Messages
   GOOGLE_AUTH_ERROR = 'Google authentication failed. Please try again.',

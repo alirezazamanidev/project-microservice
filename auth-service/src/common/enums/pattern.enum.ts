@@ -9,6 +9,7 @@ export enum PatternNameEnum {
   VERIFY_ACCESS_TOKEN = 'auth/verify-access-token',
   REMOVE_SESSION = 'auth/remove-session',
   CREATE_OR_UPDATE_USER = 'auth/create-or-update-user',
+  LOGOUT = 'auth/logout',
   // Email OTP Authentication
   LOCAL_LOGIN = 'auth/local-login',
   LOCAL_REGISTER = 'auth/local-register',
