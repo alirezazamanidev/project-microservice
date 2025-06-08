@@ -52,7 +52,7 @@ export class UserService {
       )
     )
     user=this.userRepository.create({...userDto,verifyEmail:true});
-    await this.userRepository.save(user);
+    user= await this.userRepository.save(user);
     return user;
   }
 

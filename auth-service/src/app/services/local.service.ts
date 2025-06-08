@@ -83,7 +83,7 @@ export class LocalService {
   }
 
   async localRegister({ email, fullname }: LocalRegisterDto) {
-    try {
+
       const user = await this.userService.getByEmail(email);
       if (user) {
         throw new RpcException(
@@ -141,20 +141,7 @@ export class LocalService {
         message:
           'OTP sent to your email. Please verify to complete registration.',
       };
-    } catch (error) {
-      if (error instanceof RpcException) {
-        throw error;
-      }
-      this.logger.error(`Error in registration for ${email}:`, error);
-      throw new RpcException(
-        createStandardError(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          AuthErrorCodes.REGISTRATION_PROCESS_ERROR,
-          undefined,
-          { email, originalError: error.message },
-        ),
-      );
-    }
+    
   }
 
   async verifyOtp({ email, otp }: VerifyOtpDto) {

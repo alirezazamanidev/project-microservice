@@ -37,11 +37,6 @@ export class LocalRegisterDto {
   })
   @IsEmail({}, { message: 'Invalid email format' })
   email: string;
-
-  @ApiProperty({
-    description: 'User password',
-    example: 'password',
-  })
   @ApiProperty({
     description: 'User full name',
     example: 'John Doe',
