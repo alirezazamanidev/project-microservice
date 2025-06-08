@@ -7,10 +7,10 @@ import { AppleService } from 'src/app/services/apple.service';
 export class AppleController {
   constructor(private readonly appleService: AppleService) {}
 
-  // @MessagePattern(PatternNameEnum.APPLE_LOGIN)
-  // async appleLogin(
-  //   @Payload() { code, state }: { code: string; state?: string },
-  // ) {
-  //   return this.appleService.appleLogin(code, state);
-  // }
+  @MessagePattern(PatternNameEnum.APPLE_LOGIN)
+  async appleLogin(
+    @Payload() { code, state }: { code: string; state?: string },
+  ) {
+    return this.appleService.appleCallback(code, state);
+  }
 }

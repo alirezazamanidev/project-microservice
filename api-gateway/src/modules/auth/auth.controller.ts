@@ -30,6 +30,7 @@ import {
   LocalLoginOperation,
   LocalRegisterOperation,
   VerifyOtpOperation,
+  AppleCallbackOperation,
 } from './decorators/auth-swagger.decorators';
 
 @ApiTags('Auth')
@@ -70,47 +71,26 @@ export class AuthController {
     res.redirect(appleAuthUrl);
   }
 
-  // @AppleCallbackOperation()
-  // @Post('apple/callback')
-  // async appleAuthRedirect(
-  //   @Body('code') code: string,
-  //   @Body('state') state: string,
-  //   @Req() req: Request,
-  //   @Res() res: Response,
-  // ) {
-  //   const result = await this.authService.appleCallback(code, state);
-  //   if (result) {
-  //     const sessionId = req.sessionID;
-  //     const userPayload = {
-  //       userId: result.id,
-  //       email: result.email,
-  //       picture: result.picture || '',
-  //       fullName: result.name || '',
-  //       sessionId: sessionId,
-  //       verifyEmail: true,
-  //     };
+  @AppleCallbackOperation()
+  @Post('apple/callback')
+  async appleAuthRedirect(
+    @Body('code') code: string,
+    @Body('state') state: string,
 
-  //     // Save user payload in auth service
-  //     await this.authService.saveUserPayload(userPayload);
-
-  //     // Save session data
-  //     req.session.user = {
-  //       userId: result.id,
-  //       email: result.email,
-  //       picture: result.picture || '',
-  //       fullName: result.name || '',
-  //       isVerified: true,
-  //     };
-
-  //     req.session.save((err) => {
-  //       if (err) {
-  //         console.error('❌ Session save error:', err);
-  //       }
-  //     });
-
-  //     return res.redirect('http://localhost:3000/');
-  //   }
-  // }
+    @Res() res: Response,
+    @Session() session: Record<string, any>,
+  ) {
+    const result = await this.authService.appleCallback(code, state);
+    if (result) {
+      session.user = {
+        id: result.id,
+        role: result.role,
+        email: result.email,
+      };
+    }
+    res.redirect('http://localhost:3000');
+  
+  }
 
   @LocalLoginOperation()
   @Post('local/login')
@@ -159,21 +139,20 @@ export class AuthController {
   @Get('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@Req() req: Request, @Res() res: Response) {
-      // Destroy the session
-       req.session.destroy((err) => {
-        if (err) {
-           
-          res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-            success: false,
-            message: 'Logout failed',
-          });
-        }
-  
-        res.clearCookie('connect.sid'); 
-        res.status(HttpStatus.OK).json({
-          success: true,
-          message: 'Logged out successfully',
+    // Destroy the session
+    req.session.destroy((err) => {
+      if (err) {
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+          success: false,
+          message: 'Logout failed',
         });
+      }
+
+      res.clearCookie('connect.sid');
+      res.status(HttpStatus.OK).json({
+        success: true,
+        message: 'Logged out successfully',
       });
+    });
   }
 }
