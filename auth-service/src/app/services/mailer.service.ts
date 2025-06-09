@@ -20,6 +20,8 @@ export class MailerService {
         pass: process.env.SMTP_PASS,
       },
     };
+    console.log(config);
+    
 
     this.transporter = nodemailer.createTransport(config);
 

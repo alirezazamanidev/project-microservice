@@ -26,10 +26,7 @@ import { IsAuthenticated } from '../auth/decorators/auth.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { Request } from 'express';
-import { UploadFileDto } from './dtos/upload-file.dto';
 import { PatternNameEnum } from 'src/common/enums/pattern.enum';
-import { FileDto, PresignedFileDto } from './dtos/file.dto';
-import { ErrorResponseDto } from 'src/common/dtos/base-error-response.dto';
 import {
   FileUploadOperation,
   FileListOperation,
@@ -62,7 +59,7 @@ export class FileController {
     const result = await lastValueFrom(
       this.fileClientService.send(PatternNameEnum.UPLOAD_FILE, {
         file,
-        user: { email: req.session?.user?.email },
+        user: { email: req.user?.email },
       }),
     );
     return {
