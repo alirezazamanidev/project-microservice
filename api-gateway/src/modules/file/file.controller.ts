@@ -28,10 +28,13 @@ import { memoryStorage } from 'multer';
 import { Request } from 'express';
 import { UploadFileDto } from './dtos/upload-file.dto';
 import { PatternNameEnum } from 'src/common/enums/pattern.enum';
-
-import { ApiCustomResponse } from 'src/common/decorators/swagger-response';
 import { FileDto, PresignedFileDto } from './dtos/file.dto';
 import { ErrorResponseDto } from 'src/common/dtos/base-error-response.dto';
+import {
+  FileUploadOperation,
+  FileListOperation,
+} from './decorators/file-swagger.decorators';
+
 @ApiTags('File')
 @IsAuthenticated()
 @Controller('file')
@@ -40,23 +43,7 @@ export class FileController {
     @Inject('FILE_SERVICE') private readonly fileClientService: ClientProxy,
   ) {}
 
-  @ApiCustomResponse({
-    model: FileDto,
-    status: HttpStatus.OK,
-    description: 'upload file successfullty',
-  })
-  @ApiUnauthorizedResponse({
-    description: 'unauthorized user',
-    type: ErrorResponseDto,
-  })
-  @ApiGatewayTimeoutResponse({
-    description: 'timeOut file service',
-    type: ErrorResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'bad request', type: ErrorResponseDto })
-  @ApiOperation({ summary: 'uploaded file' })
-  @ApiBody({ type: UploadFileDto })
-  @ApiConsumes('multipart/form-data')
+  @FileUploadOperation()
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
@@ -83,22 +70,8 @@ export class FileController {
       data: result,
     };
   }
-  @ApiCustomResponse({
-    model: PresignedFileDto,
-    isArray: true,
-    status: HttpStatus.OK,
-    description: 'get list files user',
-  })
-  @ApiUnauthorizedResponse({
-    description: 'unauthorized user',
-    type: ErrorResponseDto,
-  })
-  @ApiGatewayTimeoutResponse({
-    description: 'timeOut file service',
-    type: ErrorResponseDto,
-  })
-  @ApiBadRequestResponse({ description: 'bad request', type: ErrorResponseDto })
-  @ApiOperation({ summary: 'list of files user' })
+
+  @FileListOperation()
   @Get('list')
   async listUserFiles(@Req() req: Request) {
     const result = await lastValueFrom(
